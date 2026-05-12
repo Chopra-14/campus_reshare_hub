@@ -2,6 +2,22 @@
 var isLostPage = window.location.pathname.includes("lost");
 var dbPath     = isLostPage ? "lostItems" : "foundItems";
 
+// ================= PHONE PRIVACY HELPERS =================
+// Hash phone → short anonymous 24-char hex key (async, one-way)
+async function phoneKey(phone) {
+  var cleaned = String(phone || "").replace(/\D/g, "");
+  if (cleaned.length === 10) cleaned = "91" + cleaned;
+  var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cleaned));
+  return Array.from(new Uint8Array(buf))
+    .map(function(b){ return b.toString(16).padStart(2, "0"); })
+    .join("").slice(0, 24);
+}
+// Mask phone for display: keep first 5 digits, hide rest → "98765XXXXX"
+function maskPhone(phone) {
+  var d = String(phone || "").replace(/\D/g, "").slice(-10);
+  return d.length >= 5 ? d.slice(0, 5) + "XXXXX" : "XXXXXXXXXX";
+}
+
 // ================= EMAILJS CONFIG =================
 // ✅ REPLACE THESE 3 VALUES with your actual EmailJS credentials
 // Step 1: Go to https://www.emailjs.com and sign in
@@ -43,12 +59,14 @@ function submitForm(){
   }
 
   function saveToFirebase(imgData){
+    // Keep raw phone locally for wa.me links during this session only
+    var rawPhone = contactPhone;
     var data = {
       name:         name,
       category:     category,
       location:     location,
       contactName:  contactName,
-      contactPhone: contactPhone,
+      contactPhone: maskPhone(contactPhone),  // store masked — raw never in DB
       userEmail:    localStorage.getItem("user") || "",
       image:        imgData,
       date:         new Date().toLocaleDateString()
@@ -58,7 +76,8 @@ function submitForm(){
     .then(function(ref){
       closeForm();
       showSuccessToast(isLostPage ? "lost" : "found");
-      checkForMatch(name, category, data, ref.key);
+      // Pass rawPhone separately for match notifications (not stored)
+      checkForMatch(name, category, Object.assign({}, data, { contactPhone: rawPhone }), ref.key);
     })
     .catch(function(err){
       alert("❌ Failed to submit: " + err.message);
@@ -260,49 +279,50 @@ function sendWhatsAppNotification(phone, studentName, itemName, otherName, other
     return;
   }
 
-  // Clean phone — digits only, add India country code
-  var cleaned = phone.replace(/\D/g, "");
+  // Clean phone — digits only, add India country code (for wa.me link only)
+  var cleaned = String(phone || "").replace(/\D/g, "");
   if(cleaned.length === 10) cleaned = "91" + cleaned;
 
   var msg = "";
   if(messageType === "found_to_lostowner"){
     msg = "🎉 Hi " + studentName + "! Your lost item *" + itemName + "* may have been found!\n\n"
         + "👤 Finder: *" + otherName + "*\n"
-        + "📞 Phone: *" + otherPhone + "*\n"
+        + "📞 Phone: *" + maskPhone(otherPhone) + "*\n"
         + "📍 Location: *" + otherLocation + "*\n\n"
         + "Contact them to verify and collect! 🙏\n— Campus ReShare Hub";
   } else if(messageType === "lost_to_finder"){
     msg = "📦 Hi " + studentName + "! Someone is looking for the item you found!\n\n"
         + "👤 Owner: *" + otherName + "*\n"
-        + "📞 Phone: *" + otherPhone + "*\n"
+        + "📞 Phone: *" + maskPhone(otherPhone) + "*\n"
         + "📍 Lost at: *" + otherLocation + "*\n\n"
         + "Please help them get it back! 🙏\n— Campus ReShare Hub";
   } else if(messageType === "match_to_lostperson"){
     msg = "🔍 Hi " + studentName + "! Your lost item *" + itemName + "* may already be found!\n\n"
         + "👤 Finder: *" + otherName + "*\n"
-        + "📞 Phone: *" + otherPhone + "*\n"
+        + "📞 Phone: *" + maskPhone(otherPhone) + "*\n"
         + "📍 Found at: *" + otherLocation + "*\n\n"
         + "Visit Found Items to verify! 🙏\n— Campus ReShare Hub";
   } else if(messageType === "match_to_finder"){
     msg = "🔴 Hi " + studentName + "! Someone lost an item matching what you found!\n\n"
         + "👤 Lost by: *" + otherName + "*\n"
-        + "📞 Phone: *" + otherPhone + "*\n"
+        + "📞 Phone: *" + maskPhone(otherPhone) + "*\n"
         + "📍 Lost at: *" + otherLocation + "*\n\n"
         + "Please contact them! 🙏\n— Campus ReShare Hub";
   }
 
-  // ✅ Save notification to Firebase — shown as in-app bell notification
-  firebase.database().ref("notifications/" + cleaned).push({
-    message:   msg,
-    waLink:    "https://wa.me/" + cleaned + "?text=" + encodeURIComponent(msg),
-    phone:     cleaned,
-    name:      studentName,
-    itemName:  itemName,
-    time:      new Date().toLocaleString(),
-    read:      false
+  // ✅ Save notification to Firebase — hashed key so phone can't be enumerated
+  phoneKey(phone).then(function(key){
+    firebase.database().ref("notifications/" + key).push({
+      message:   msg,
+      waLink:    "https://wa.me/" + cleaned + "?text=" + encodeURIComponent(msg),
+      phone:     maskPhone(phone),   // store masked, never raw
+      name:      studentName,
+      itemName:  itemName,
+      time:      new Date().toLocaleString(),
+      read:      false
+    });
+    console.log("✅ WhatsApp notification saved to Firebase (hashed key)");
   });
-
-  console.log("✅ WhatsApp notification saved to Firebase for +" + cleaned);
 }
 
 // ================= SEND EMAIL via EmailJS =================
@@ -404,7 +424,7 @@ function loadItems(){
           + '<p>📍 ' + esc(item.location  || "—") + '</p>'
           + '<p>📅 ' + esc(item.date      || "—") + '</p>'
           + '<p>👤 ' + esc(item.contactName  || "N/A") + '</p>'
-          + '<p>📞 ' + esc(item.contactPhone || "N/A") + '</p>'
+          + '<p>📞 ' + maskPhone(item.contactPhone || "") + '</p>'
           + (item.flagged
               ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:7px 10px;margin-top:8px;font-size:12px;color:#92400e;">🚩 ' + esc(item.flagReason || "Under review") + '</div>'
               : "")
@@ -479,7 +499,7 @@ function claimItem(itemId){
     firebase.database().ref("claims/" + itemId).push({
       claimantName:  claimantName.trim(),
       claimantEmail: userEmail,
-      claimantPhone: claimantPhone.trim(),
+      claimantPhone: maskPhone(claimantPhone.trim()),
       userEmail:     userEmail,
       status:        "pending",
       time:          new Date().toLocaleString()
@@ -506,13 +526,19 @@ function closeImage(){
 // ================= CHAT =================
 var currentChatId = "";
 function openChat(phone, item){
-  currentChatId = phone + "_" + item;
-  document.getElementById("chatBox").style.display = "flex";
+  var safeItem = item.replace(/\s+/g, "_").toLowerCase();
   var msgContainer = document.getElementById("chatMessages");
+  document.getElementById("chatBox").style.display = "flex";
+  msgContainer.innerHTML = '<div class="chat-empty">Loading… ⏳</div>';
 
   var myPhone = (localStorage.getItem("userPhone") || "").replace(/\D/g,"").slice(-10);
 
-  firebase.database().ref("chats/" + currentChatId).on("value", function(snap){
+  phoneKey(phone).then(function(key){
+    // Close any previous listener
+    if(currentChatId) firebase.database().ref("chats/" + currentChatId).off();
+    currentChatId = key + "_" + safeItem;
+
+    firebase.database().ref("chats/" + currentChatId).on("value", function(snap){
     msgContainer.innerHTML = "";
     if(!snap.exists()){
       msgContainer.innerHTML = '<div class="chat-empty">No messages yet. Say hi! 👋</div>';
@@ -570,6 +596,7 @@ function openChat(phone, item){
     });
     msgContainer.scrollTop = msgContainer.scrollHeight;
   });
+  }); // end phoneKey.then
 }
 function sendMessage(){
   var input = document.getElementById("chatInput");
@@ -687,7 +714,7 @@ function showMatchPopup_ToFinder(foundName, matches, finderData){
       + '<div style="font-size:12px;color:#78350f;margin-top:5px;line-height:1.7;">'
       + '📍 Lost at: <b>' + esc(m.item.location    || "—") + '</b><br>'
       + '👤 Owner: <b>'   + esc(m.item.contactName  || "—") + '</b><br>'
-      + '📞 Phone: <b>'   + esc(m.item.contactPhone || "—") + '</b>'
+      + '📞 Phone: <b>'   + maskPhone(m.item.contactPhone || "") + '</b>'
       + '</div></div>';
   }).join("");
   showPopup("🎉","Match Found!",
@@ -705,7 +732,7 @@ function showMatchPopup_ToOwner(lostName, matches){
       + '<div style="font-size:12px;color:#14532d;margin-top:5px;line-height:1.7;">'
       + '📍 Found at: <b>' + esc(m.item.location    || "—") + '</b><br>'
       + '👤 Finder: <b>'   + esc(m.item.contactName  || "—") + '</b><br>'
-      + '📞 Phone: <b>'    + esc(m.item.contactPhone || "—") + '</b>'
+      + '📞 Phone: <b>'    + maskPhone(m.item.contactPhone || "") + '</b>'
       + '</div></div>';
   }).join("");
   showPopup("🔍","Possible Match Found!",
