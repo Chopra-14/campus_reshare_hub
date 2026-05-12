@@ -978,9 +978,13 @@
         <div class="success-icon">✓</div>
         <div class="success-text">
           <h3 style="text-align:center;margin-bottom:8px;">Password Updated!</h3>
-          <p style="text-align:center;margin-bottom:28px;">Your new password has been saved. Sign in with your new password.</p>
+          <p style="text-align:center;margin-bottom:16px;">Your new password has been saved successfully.</p>
+          <div style="background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(74,222,128,0.08));border:1.5px solid rgba(34,197,94,0.3);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🔐</span>
+            <span style="font-size:13px;color:var(--success);font-weight:600;">You will be prompted to save your new password when you sign back in.</span>
+          </div>
         </div>
-        <button class="btn-modal" onclick="closeModal()">Back to Sign In</button>
+        <button class="btn-modal" onclick="closeModal()">Back to Sign In →</button>
       </div>
     </div>
   </div>
@@ -1253,16 +1257,30 @@
   }
 
   // ══ SAVE PASSWORD POPUP LOGIC ══
-  var _spEmail = '', _spPwd = '', _spPwdVisible = false, _spUser = null;
+  var _spEmail = '', _spPwd = '', _spPwdVisible = false, _spUser = null, _spIsUpdate = false;
 
   function showSavePwdPopup(email, pwd) {
     _spEmail = email; _spPwd = pwd;
     _spPwdVisible = false;
-    document.getElementById('spEmail').textContent = email;
-    document.getElementById('spPwd').textContent   = '••••••••';
+
+    // Detect if this is an UPDATE (password already saved for this email)
+    var savedEmail = localStorage.getItem('reshare_saved_email');
+    _spIsUpdate = !!(savedEmail && savedEmail.toLowerCase() === email.toLowerCase());
+
+    // Dynamically update popup heading/button text
+    var titleEl    = document.getElementById('spTitle');
+    var subtitleEl = document.getElementById('spSubtitle');
+    var saveBtnEl  = document.getElementById('spSaveBtn');
+    if (titleEl)    titleEl.textContent    = _spIsUpdate ? 'Update saved password?' : 'Save your password?';
+    if (subtitleEl) subtitleEl.textContent = _spIsUpdate ? 'Your password was recently changed' : 'For Campus ReShare Hub';
+    if (saveBtnEl)  saveBtnEl.textContent  = _spIsUpdate ? 'Update Now' : 'Save Now';
+
+    document.getElementById('spEmail').textContent  = email;
+    document.getElementById('spPwd').textContent    = '••••••••';
     document.getElementById('spEyeBtn').textContent = '👁';
-    var overlay = document.getElementById('savePwdOverlay');
-    overlay.style.display = 'flex';
+    document.getElementById('spPwd').style.letterSpacing = '3px';
+    document.getElementById('spPwd').style.fontSize      = '18px';
+    document.getElementById('savePwdOverlay').style.display = 'flex';
     // get user for successView after choice
     dbGetUser(email).then(function(u){ _spUser = u; });
   }
@@ -1276,17 +1294,29 @@
   }
 
   function savePwdNow() {
-    // Save email+password in localStorage (browser-local only)
+    // Always overwrite saved email+password with the latest credentials
     localStorage.setItem('reshare_saved_email', _spEmail);
     localStorage.setItem('reshare_saved_pwd',   btoa(_spPwd));
     localStorage.setItem('reshare_pwdsaved_' + _spEmail, '1');
+    // Also clear any alternate-case key
+    localStorage.setItem('reshare_pwdsaved_' + _spEmail.toLowerCase(), '1');
     document.getElementById('savePwdOverlay').style.display = 'none';
-    showSuccessView(_spUser || { email: _spEmail });
+    var msg = _spIsUpdate ? 'Saved password updated in your browser!' : 'Password saved to your browser!';
+    showToast(msg, '💾', 3000);
+    // Only go to successView if user is actually logged in (has session)
+    if (_spUser && localStorage.getItem('reshare_session')) {
+      showSuccessView(_spUser);
+    }
+    // Otherwise stay on login form (post-reset flow — user still needs to sign in)
   }
 
   function savePwdLater() {
     document.getElementById('savePwdOverlay').style.display = 'none';
-    showSuccessView(_spUser || { email: _spEmail });
+    // Only go to successView if user is actually logged in (has session)
+    if (_spUser && localStorage.getItem('reshare_session')) {
+      showSuccessView(_spUser);
+    }
+    // Otherwise stay on login form (post-reset flow)
   }
 
   function goToDashboard() {
@@ -1493,7 +1523,27 @@
   let currentStep = 1, generatedOTP = '', resetEmailVal = '';
 
   function openModal() { document.getElementById('overlay').classList.add('open'); goStep(1); }
-  function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+
+    // ✅ FIX 5: After password reset (step 4 was shown), trigger toast + save-popup
+    const resetEmail = sessionStorage.getItem('reshare_reset_email');
+    const resetPwd   = sessionStorage.getItem('reshare_reset_pwd');
+    if (resetEmail && resetPwd) {
+      sessionStorage.removeItem('reshare_reset_email');
+      sessionStorage.removeItem('reshare_reset_pwd');
+      // Show "password updated" toast notification
+      showToast('Password updated successfully! Please sign in with your new password.', '🔐', 4500);
+      // Pre-fill email in login form
+      document.getElementById('email').value = resetEmail;
+      document.getElementById('pwd').value   = '';
+      document.getElementById('pwd').focus();
+      // After a short delay, offer to save the new password
+      setTimeout(function() {
+        showSavePwdPopup(resetEmail, resetPwd);
+      }, 900);
+    }
+  }
   function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
 
   function goStep(n) {
@@ -1648,15 +1698,26 @@
     if (pwErr) return showMError('err3', pwErr);
     if (np !== cp) return showMError('err3', 'Passwords do not match.');
 
+    const btn = document.querySelector('#step3 .btn-modal');
+    if (btn) { btn.textContent = 'Updating…'; btn.disabled = true; }
+
     try {
       const hashedPwd = await sha256(np);
       await dbUpdatePassword(resetEmailVal, hashedPwd);
-      // If user was logged in with old session, clear it
+
+      // Clear old session so user must log in fresh
       localStorage.removeItem('reshare_session');
+      localStorage.removeItem('user');
+
+      // Store reset credentials in sessionStorage for use in popup
+      sessionStorage.setItem('reshare_reset_email', resetEmailVal);
+      sessionStorage.setItem('reshare_reset_pwd',   np);
+
       goStep(4);
     } catch(err) {
       console.error(err);
       showMError('err3', 'Failed to update password. Please try again.');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
     }
   }
   </script>
@@ -1670,8 +1731,8 @@
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
       <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔑</div>
       <div>
-        <div style="font-weight:800;font-size:15px;color:#12100E;">Save your password?</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px;">For Campus ReShare Hub</div>
+        <div id="spTitle" style="font-weight:800;font-size:15px;color:#12100E;">Save your password?</div>
+        <div id="spSubtitle" style="font-size:12px;color:#6b7280;margin-top:2px;">For Campus ReShare Hub</div>
       </div>
     </div>
     <div style="background:#f8f9ff;border:1.5px solid #e8eaf6;border-radius:12px;padding:14px 16px;margin-bottom:18px;">
@@ -1687,7 +1748,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;">
-      <button onclick="savePwdNow()" style="
+      <button id="spSaveBtn" onclick="savePwdNow()" style="
         flex:1;padding:12px;border:none;border-radius:12px;
         background:linear-gradient(135deg,#4f46e5,#7c3aed);
         color:#fff;font-size:14px;font-weight:700;cursor:pointer;
@@ -1708,6 +1769,10 @@
   @keyframes spop { from{opacity:0;transform:scale(0.88);} to{opacity:1;transform:scale(1);} }
   [data-theme="dark"] #savePwdOverlay > div { background:#1a2035 !important; }
   [data-theme="dark"] #savePwdOverlay .sp-field { background:#131827 !important; border-color:rgba(255,255,255,0.08) !important; }
+  [data-theme="dark"] #spTitle { color:#e9e0ff !important; }
+  [data-theme="dark"] #spSubtitle { color:#a78bfa !important; }
+  [data-theme="dark"] #spEmail { color:#e9e0ff !important; }
+  [data-theme="dark"] #spPwd { color:#e9e0ff !important; }
 </style>
 </body>
 </html>
