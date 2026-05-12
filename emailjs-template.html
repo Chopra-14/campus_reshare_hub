@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;">
+              <div style="font-size:36px;margin-bottom:8px;">🎓</div>
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Campus ReShare Hub</h1>
+              <p style="margin:6px 0 0;color:#c4b5fd;font-size:13px;">Lost &amp; Found Notification System</p>
+            </td>
+          </tr>
+
+          <!-- ALERT BANNER -->
+          <tr>
+            <td style="background:#fefce8;border-left:4px solid #eab308;padding:14px 40px;font-size:13px;color:#854d0e;">
+              ⚡ &nbsp;<strong>{{subject}}</strong>
+            </td>
+          </tr>
+
+          <!-- MAIN BODY -->
+          <tr>
+            <td style="background:#ffffff;padding:36px 40px;">
+
+              <!-- Greeting -->
+              <p style="margin:0 0 20px;font-size:16px;color:#1e293b;">
+                Hi <strong>{{to_name}}</strong> 👋
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;">
+                {{message}}
+              </p>
+
+              <!-- Item Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Your Item</p>
+                    <p style="margin:6px 0 0;font-size:18px;font-weight:700;color:#1e293b;">📦 {{item_name}}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Contact Card -->
+              <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;">Contact Details</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;">
+                          <span style="font-size:13px;color:#64748b;display:inline-block;width:120px;">👤 Their Name</span>
+                          <strong style="font-size:14px;color:#15803d;">{{other_name}}</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;">
+                          <span style="font-size:13px;color:#64748b;display:inline-block;width:120px;">📞 Their Phone</span>
+                          <strong style="font-size:14px;color:#15803d;">{{other_phone}}</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;">
+                          <span style="font-size:13px;color:#64748b;display:inline-block;width:120px;">📍 Their Location</span>
+                          <strong style="font-size:14px;color:#15803d;">{{other_location}}</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;border-top:1px dashed #bbf7d0;margin-top:6px;">
+                          <span style="font-size:13px;color:#64748b;display:inline-block;width:120px;">📱 Your Phone</span>
+                          <strong style="font-size:14px;color:#0369a1;">{{my_phone}}</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;">
+                          <span style="font-size:13px;color:#64748b;display:inline-block;width:120px;">🕐 Time</span>
+                          <strong style="font-size:14px;color:#15803d;">{{match_time}}</strong>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 28px;">
+                    <a href="loss-found-reshare-hub.vercel.app"
+                       style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#ffffff;font-size:15px;font-weight:700;padding:14px 36px;border-radius:50px;text-decoration:none;letter-spacing:0.3px;">
+                      🔍 View on Campus ReShare Hub →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Tips box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1d4ed8;">💡 Quick Tips</p>
+                    <ul style="margin:0;padding-left:18px;font-size:13px;color:#3730a3;line-height:1.9;">
+                      <li>Contact the person above as soon as possible</li>
+                      <li>Meet in a public place on campus to verify the item</li>
+                      <li>Bring your student ID for verification</li>
+                    </ul>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#1e293b;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#ffffff;">Campus ReShare Hub</p>
+              <p style="margin:0;font-size:12px;color:#64748b;">This is an automated notification. Please do not reply to this email.</p>
+              <p style="margin:8px 0 0;font-size:11px;color:#334155;">Powered by EmailJS &nbsp;·&nbsp; Sent at {{match_time}}</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

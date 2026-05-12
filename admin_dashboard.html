@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Control Panel — Campus ReShare Hub</title>
+<script>(function(){ var t=localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme',t); })();</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyAEZf8xbIFCzjHZ5PzzhMFltAOmnluJnwk",
+    authDomain: "campus-reshare.firebaseapp.com",
+    databaseURL: "https://campus-reshare-default-rtdb.firebaseio.com/",
+    projectId: "campus-reshare",
+    storageBucket: "campus-reshare.appspot.com",
+    messagingSenderId: "182045823730",
+    appId: "1:182045823730:web:fe14335d18c777acaf766b"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  var db = firebase.database();
+</script>
+<style>
+:root {
+  --bg:       #07090f;
+  --s1:       #0e1219;
+  --s2:       #141b26;
+  --s3:       #1c2535;
+  --s4:       #232f42;
+  --border:   rgba(255,255,255,0.06);
+  --border2:  rgba(255,255,255,0.10);
+  --blue:     #3b82f6;
+  --blue-d:   #1d4ed8;
+  --blue-g:   rgba(59,130,246,0.12);
+  --green:    #22c55e;
+  --green-g:  rgba(34,197,94,0.12);
+  --red:      #ef4444;
+  --red-g:    rgba(239,68,68,0.12);
+  --yellow:   #f59e0b;
+  --yellow-g: rgba(245,158,11,0.12);
+  --purple:   #a78bfa;
+  --purple-g: rgba(167,139,250,0.12);
+  --cyan:     #22d3ee;
+  --text:     #f1f5f9;
+  --t2:       #94a3b8;
+  --t3:       #475569;
+  --t4:       #2d3a4f;
+  --r:        12px;
+  --r2:       8px;
+  --tr:       0.2s cubic-bezier(0.4,0,0.2,1);
+  --sh:       0 4px 20px rgba(0,0,0,0.5);
+  --sh2:      0 16px 48px rgba(0,0,0,0.6);
+}
+
+[data-theme="light"] {
+  --bg:       #f0f4f8;
+  --s1:       #ffffff;
+  --s2:       #f8fafc;
+  --s3:       #f1f5f9;
+  --s4:       #e2e8f0;
+  --border:   rgba(0,0,0,0.07);
+  --border2:  rgba(0,0,0,0.11);
+  --blue:     #2563eb;
+  --blue-d:   #1d4ed8;
+  --blue-g:   rgba(37,99,235,0.08);
+  --green:    #16a34a;
+  --green-g:  rgba(22,163,74,0.08);
+  --red:      #dc2626;
+  --red-g:    rgba(220,38,38,0.08);
+  --yellow:   #d97706;
+  --yellow-g: rgba(217,119,6,0.08);
+  --purple:   #7c3aed;
+  --purple-g: rgba(124,58,237,0.08);
+  --cyan:     #0891b2;
+  --text:     #0f172a;
+  --t2:       #334155;
+  --t3:       #64748b;
+  --t4:       #cbd5e1;
+  --sh:       0 4px 20px rgba(0,0,0,0.08);
+  --sh2:      0 16px 48px rgba(0,0,0,0.12);
+}
+
+[data-theme="light"] .data-table tr:hover td { background: rgba(0,0,0,0.02); }
+[data-theme="light"] .modal-box { background: #ffffff; border-color: rgba(0,0,0,0.10); }
+[data-theme="light"] .modal-head { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .modal-foot { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .toast { background: #1e293b; }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{transition:background 0.45s,color 0.45s;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13.5px;line-height:1.6;overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;transition:all var(--tr);}
+button:active{transform:scale(0.96)!important;}
+input,select,textarea{font-family:'DM Sans',sans-serif;}
+
+/* ══ LAYOUT ══ */
+.wrap{display:flex;min-height:100vh;}
+
+/* ══ SIDEBAR ══ */
+.sb{
+  width:230px;flex-shrink:0;
+  background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+  z-index:200;overflow-y:auto;
+}
+
+.sb-top{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+.sb-theme-btn{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:8px 10px;border-radius:var(--r2);border:1px solid var(--border);
+  background:var(--blue-g);color:var(--t2);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all var(--tr);margin-top:8px;
+}
+.sb-theme-btn:hover{background:var(--purple-g);color:var(--purple);border-color:rgba(167,139,250,0.3);}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.sb-logo-box{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#6d28d9,#a78bfa);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.sb-logo-name{font-family:'Calibri',Georgia,serif;font-weight:900;font-size:0.95rem;color:var(--text);}
+.sb-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--red-g);border:1px solid rgba(239,68,68,0.25);
+  color:var(--red);padding:3px 9px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-top:4px;
+}
+.sb-badge::before{content:'';width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block;}
+
+.sb-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;}
+.sb-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--t3);padding:8px 8px 4px;}
+
+.nav-btn{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:var(--r2);
+  color:var(--t2);font-weight:500;font-size:13px;
+  cursor:pointer;border:none;background:transparent;width:100%;text-align:left;
+  position:relative;
+}
+.nav-btn:hover{background:var(--s2);color:var(--text);}
+.nav-btn.active{background:var(--blue-g);color:var(--blue);border:1px solid rgba(59,130,246,0.15);}
+.nav-btn .ni{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.nav-btn .label{flex:1;}
+.nav-btn .badge-pill{
+  background:var(--red);color:#fff;font-size:9px;font-weight:800;
+  padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;
+}
+.nav-btn .badge-pill.blue{background:var(--blue);}
+.nav-btn .badge-pill.green{background:var(--green);}
+.nav-btn .badge-pill.yellow{background:var(--yellow);color:#000;}
+
+.sb-bottom{padding:12px 8px;border-top:1px solid var(--border);}
+.admin-chip{
+  display:flex;align-items:center;gap:9px;
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:10px 12px;
+}
+.admin-av{
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:12px;color:#fff;flex-shrink:0;
+}
+.admin-info{flex:1;min-width:0;}
+.admin-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-role{font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+.logout-btn{
+  background:transparent;border:none;color:var(--t3);font-size:1.1rem;
+  padding:4px;border-radius:6px;flex-shrink:0;
+}
+.logout-btn:hover{color:var(--red);background:var(--red-g);}
+
+/* ══ MAIN ══ */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+/* ══ TOPBAR ══ */
+.topbar{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:0 24px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-left h1{font-family:'Calibri',Georgia,serif;font-weight:800;font-size:1.1rem;color:var(--text);}
+.topbar-left p{font-size:11px;color:var(--t3);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+
+.tb-search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:7px 12px;width:200px;
+}
+.tb-search input{background:transparent;border:none;outline:none;color:var(--text);font-size:12.5px;width:100%;}
+.tb-search input::placeholder{color:var(--t3);}
+.tb-search span{color:var(--t3);font-size:0.85rem;}
+
+.tb-btn{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:7px 10px;color:var(--t2);
+  font-size:0.9rem;position:relative;
+}
+.tb-btn:hover{background:var(--s3);color:var(--text);}
+.tb-notif-dot{
+  position:absolute;top:5px;right:5px;width:7px;height:7px;
+  background:var(--red);border-radius:50%;border:1.5px solid var(--s1);
+}
+
+.tb-admin-chip{
+  display:flex;align-items:center;gap:7px;
+  background:var(--red-g);border:1px solid rgba(239,68,68,0.2);
+  border-radius:var(--r2);padding:5px 12px;
+}
+.tb-admin-chip span{font-size:12px;font-weight:700;color:var(--red);}
+
+/* ══ PAGES ══ */
+.page{display:none;padding:22px 24px;animation:fadeUp 0.28s ease both;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ══ STATS GRID ══ */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat-box{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:all var(--tr);position:relative;overflow:hidden;
+}
+.stat-box::after{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:70px;height:70px;border-radius:50%;opacity:0.06;
+}
+.stat-box.bl::after{background:var(--blue);}
+.stat-box.gr::after{background:var(--green);}
+.stat-box.re::after{background:var(--red);}
+.stat-box.ye::after{background:var(--yellow);}
+.stat-box.pu::after{background:var(--purple);}
+.stat-box:hover{transform:translateY(-2px);box-shadow:var(--sh);border-color:var(--border2);}
+.stat-icon{font-size:1.3rem;margin-bottom:2px;}
+.stat-val{font-family:'Calibri',Georgia,serif;font-size:1.8rem;font-weight:900;color:var(--text);line-height:1;}
+.stat-lbl{font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;}
+.stat-trend{font-size:10px;font-weight:600;margin-top:2px;}
+.up{color:var(--green);}
+.dn{color:var(--red);}
+
+/* ══ PANEL ══ */
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
+.panel-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.panel-head h2{font-family:'Calibri',Georgia,serif;font-weight:700;font-size:0.95rem;color:var(--text);display:flex;align-items:center;gap:7px;}
+.panel-head-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ph-count{font-size:11px;color:var(--t3);}
+
+/* ══ TABLE ══ */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{
+  padding:10px 14px;text-align:left;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;
+  color:var(--t3);background:var(--s2);border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.data-table td{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  color:var(--t2);vertical-align:middle;font-size:12.5px;
+}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+.data-table .empty-row td{text-align:center;padding:40px;color:var(--t3);}
+
+/* ══ USER ROW ══ */
+.user-cell{display:flex;align-items:center;gap:10px;}
+.u-av{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff;
+}
+.u-name{font-weight:600;font-size:13px;color:var(--text);}
+.u-email{font-size:11px;color:var(--t3);margin-top:1px;}
+.u-joined{font-size:11px;color:var(--t3);}
+
+/* ══ ITEM ROW ══ */
+.item-cell{display:flex;align-items:center;gap:10px;}
+.item-thumb{
+  width:42px;height:42px;border-radius:8px;flex-shrink:0;
+  background:var(--s3);display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;overflow:hidden;
+}
+.item-thumb img{width:100%;height:100%;object-fit:cover;}
+.item-title-text{font-weight:600;font-size:13px;color:var(--text);}
+.item-meta-text{font-size:11px;color:var(--t3);margin-top:2px;}
+
+/* ══ BADGES ══ */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
+}
+.b-active  {background:var(--green-g);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-banned  {background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-pending {background:var(--yellow-g);color:var(--yellow);border:1px solid rgba(245,158,11,0.2);}
+.b-approved{background:var(--green-g);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-rejected{background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-lost    {background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-found   {background:var(--green-g);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-warn    {background:var(--yellow-g);color:var(--yellow);border:1px solid rgba(245,158,11,0.2);}
+
+/* ══ ACTION BUTTONS ══ */
+.act-row{display:flex;gap:5px;flex-wrap:wrap;}
+.a-btn{
+  padding:5px 10px;border-radius:6px;border:none;
+  font-size:11px;font-weight:700;white-space:nowrap;
+}
+.a-ban  {background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.a-ban:hover{background:var(--red);color:#fff;}
+.a-unban{background:var(--green-g);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.a-unban:hover{background:var(--green);color:#fff;}
+.a-del  {background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.a-del:hover{background:var(--red);color:#fff;}
+.a-view {background:var(--blue-g);color:var(--blue);border:1px solid rgba(59,130,246,0.2);}
+.a-view:hover{background:var(--blue);color:#fff;}
+.a-warn {background:var(--yellow-g);color:var(--yellow);border:1px solid rgba(245,158,11,0.2);}
+.a-warn:hover{background:var(--yellow);color:#000;}
+.a-approve{background:var(--green-g);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.a-approve:hover{background:var(--green);color:#fff;}
+.a-reject {background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.a-reject:hover{background:var(--red);color:#fff;}
+.a-email  {background:var(--purple-g);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+.a-email:hover{background:var(--purple);color:#fff;}
+.a-restore{background:var(--blue-g);color:var(--blue);border:1px solid rgba(59,130,246,0.2);}
+.a-restore:hover{background:var(--blue);color:#fff;}
+
+/* ══ FILTER BAR ══ */
+.filter-bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  background:var(--s2);
+}
+.f-input{
+  background:var(--s3);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:7px 12px;color:var(--text);
+  font-size:12.5px;outline:none;flex:1;min-width:160px;
+}
+.f-input:focus{border-color:var(--blue);}
+.f-select{
+  background:var(--s3);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:7px 12px;color:var(--text);
+  font-size:12.5px;outline:none;cursor:pointer;
+}
+.f-select:focus{border-color:var(--blue);}
+.f-btn{
+  padding:7px 14px;border-radius:var(--r2);border:none;
+  font-size:12px;font-weight:700;
+}
+.f-btn-blue{background:var(--blue);color:#fff;}
+.f-btn-blue:hover{background:var(--blue-d);}
+.f-btn-red{background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.f-btn-red:hover{background:var(--red);color:#fff;}
+
+/* ══ ACTIVITY FEED ══ */
+.feed-list{display:flex;flex-direction:column;}
+.feed-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  transition:background var(--tr);
+}
+.feed-row:last-child{border-bottom:none;}
+.feed-row:hover{background:var(--s2);}
+.feed-ico{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:0.95rem;margin-top:1px;
+}
+.feed-body{flex:1;}
+.feed-title{font-size:12.5px;font-weight:600;color:var(--text);}
+.feed-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.feed-time{font-size:10.5px;color:var(--t4);white-space:nowrap;margin-top:3px;}
+
+/* ══ CHARTS (CSS bar charts) ══ */
+.mini-chart{display:flex;flex-direction:column;gap:8px;padding:16px 18px;}
+.chart-row{display:flex;align-items:center;gap:10px;}
+.chart-label{font-size:11px;color:var(--t2);width:90px;flex-shrink:0;text-align:right;}
+.chart-bar-wrap{flex:1;background:var(--s3);border-radius:4px;height:8px;overflow:hidden;}
+.chart-bar{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+.chart-num{font-size:11px;color:var(--t2);width:30px;text-align:right;}
+
+/* ══ SETTINGS ══ */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.s-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
+.s-card h3{font-family:'Calibri',Georgia,serif;font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.s-field{margin-bottom:12px;}
+.s-field label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);margin-bottom:5px;}
+.s-field input,.s-field select,.s-field textarea{
+  width:100%;padding:8px 12px;background:var(--s2);
+  border:1.5px solid var(--border2);border-radius:var(--r2);
+  color:var(--text);font-size:13px;outline:none;transition:border-color var(--tr);
+}
+.s-field input:focus,.s-field select:focus,.s-field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.08);}
+.s-field textarea{resize:vertical;min-height:80px;}
+.s-save{
+  padding:9px 20px;background:var(--blue);color:#fff;
+  border:none;border-radius:var(--r2);font-weight:700;font-size:13px;margin-top:4px;
+}
+.s-save:hover{background:var(--blue-d);}
+.s-danger{background:var(--red);}
+.s-danger:hover{background:#dc2626;}
+.code-block{
+  background:var(--s3);border:1px solid var(--border);border-radius:var(--r2);
+  padding:12px 14px;font-size:11.5px;line-height:1.9;color:var(--t2);font-family:monospace;
+}
+.code-block .var{color:var(--cyan);}
+
+/* ══ MODAL ══ */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);
+  z-index:9999;justify-content:center;align-items:center;padding:16px;
+}
+.modal-bg.open{display:flex;}
+.modal-card{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:16px;width:100%;max-width:520px;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:0 32px 80px rgba(0,0,0,0.7);
+  animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes popIn{from{transform:scale(0.88);opacity:0;}to{transform:scale(1);opacity:1;}}
+.m-head{
+  padding:18px 22px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.m-head h3{font-family:'Calibri',Georgia,serif;font-weight:800;font-size:1rem;color:var(--text);}
+.m-close{
+  width:30px;height:30px;border-radius:50%;border:none;
+  background:var(--s3);color:var(--t2);font-size:0.9rem;
+  display:flex;align-items:center;justify-content:center;
+}
+.m-close:hover{background:var(--s4);color:var(--text);}
+.m-body{padding:18px 22px;}
+.m-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.m-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;}
+.m-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);width:90px;flex-shrink:0;padding-top:2px;}
+.m-val{font-size:13px;color:var(--text);flex:1;word-break:break-all;}
+.email-box{
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);
+  padding:14px;font-size:12px;color:var(--t2);line-height:1.8;margin-top:12px;
+}
+.email-box strong{color:var(--text);}
+.m-btn{
+  padding:8px 18px;border:none;border-radius:var(--r2);font-weight:700;font-size:12.5px;
+}
+.m-btn-primary{background:var(--blue);color:#fff;}
+.m-btn-primary:hover{background:var(--blue-d);}
+.m-btn-red{background:var(--red);color:#fff;}
+.m-btn-red:hover{background:#dc2626;}
+.m-btn-ghost{background:var(--s3);color:var(--t2);border:1px solid var(--border2);}
+.m-btn-ghost:hover{background:var(--s4);}
+
+/* ══ CONFIRM DIALOG ══ */
+.confirm-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);
+  z-index:19999;justify-content:center;align-items:center;
+}
+.confirm-bg.open{display:flex;}
+.confirm-box{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:14px;padding:28px;max-width:380px;width:90%;
+  text-align:center;box-shadow:var(--sh2);
+  animation:popIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.confirm-icon{font-size:2.8rem;margin-bottom:12px;}
+.confirm-title{font-family:'Calibri',Georgia,serif;font-weight:800;font-size:1.05rem;color:var(--text);margin-bottom:8px;}
+.confirm-msg{font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:22px;}
+.confirm-actions{display:flex;gap:10px;justify-content:center;}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:12px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:var(--sh2);z-index:99999;
+  transform:translateY(70px);opacity:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width:320px;
+}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast-icon{font-size:1.2rem;flex-shrink:0;}
+#toast-text{font-size:13px;font-weight:600;color:var(--text);}
+#toast-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+
+/* ══ TABS ══ */
+.tab-bar{display:flex;gap:4px;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--s2);}
+.tab-btn{
+  padding:6px 14px;border-radius:var(--r2);border:none;
+  background:transparent;color:var(--t2);font-size:12.5px;font-weight:600;
+}
+.tab-btn:hover{background:var(--s3);color:var(--text);}
+.tab-btn.active{background:var(--blue);color:#fff;}
+
+/* ══ OVERVIEW GRID ══ */
+.ov-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;}
+
+/* RESPONSIVE ADMIN DASHBOARD */
+@media (max-width: 992px) {
+  .sb { width: 70px; } /* Shrink sidebar */
+  .sb-logo-name, .nav-btn .label, .sb-section-label, .admin-info { display: none; }
+  .sb-top, .sb-nav, .sb-bottom { padding: 10px 5px; align-items: center; }
+  .nav-btn { justify-content: center; }
+}
+
+@media (max-width: 768px) {
+  .wrap { flex-direction: column; }
+  .sb {
+    width: 100%; height: auto; position: relative;
+    flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .sb-nav { flex-direction: row; }
+  .main-content { padding: 15px; }
+  .stat-grid { grid-template-columns: 1fr; } /* Stack stats on mobile */
+  .data-table-wrap { overflow-x: auto; } /* Scrollable tables */
+}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--s4);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--t3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sb">
+  <div class="sb-top">
+    <div class="sb-logo">
+      <div class="sb-logo-box">🔄</div>
+      <span class="sb-logo-name">ReShare Hub</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;"><div class="sb-badge">Admin Panel</div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section-label">Main</div>
+    <button class="nav-btn active" onclick="nav('overview',this)">
+      <span class="ni">📊</span><span class="label">Overview</span>
+    </button>
+    <button class="nav-btn" onclick="nav('analytics',this)">
+      <span class="ni">📈</span><span class="label">Analytics</span>
+    </button>
+
+    <div class="sb-section-label">Content</div>
+    <button class="nav-btn" onclick="nav('lost',this)">
+      <span class="ni">🔴</span><span class="label">Lost Items</span>
+      <span class="badge-pill red" id="sb-lost">0</span>
+    </button>
+    <button class="nav-btn" onclick="nav('found',this)">
+      <span class="ni">🟢</span><span class="label">Found Items</span>
+      <span class="badge-pill green" id="sb-found">0</span>
+    </button>
+    <button class="nav-btn" onclick="nav('claims',this)">
+      <span class="ni">🏷️</span><span class="label">Claims</span>
+      <span class="badge-pill yellow" id="sb-claims">0</span>
+    </button>
+    <button class="nav-btn" onclick="nav('marketplace',this)">
+      <span class="ni">🛒</span><span class="label">Marketplace</span>
+      <span class="badge-pill blue" id="sb-market">0</span>
+    </button>
+
+    <div class="sb-section-label">Users</div>
+    <button class="nav-btn" onclick="nav('users',this)">
+      <span class="ni">👥</span><span class="label">All Users</span>
+      <span class="badge-pill blue" id="sb-users">0</span>
+    </button>
+    <button class="nav-btn" onclick="nav('banned',this)">
+      <span class="ni">🚫</span><span class="label">Banned</span>
+      <span class="badge-pill" id="sb-banned">0</span>
+    </button>
+
+    <div class="sb-section-label">Logs</div>
+    <button class="nav-btn" onclick="nav('activity',this)">
+      <span class="ni">📋</span><span class="label">Activity Log</span>
+    </button>
+    <button class="nav-btn" onclick="nav('reports',this)">
+      <span class="ni">⚠️</span><span class="label">Flagged</span>
+      <span class="badge-pill" id="sb-flagged">0</span>
+    </button>
+
+    <div class="sb-section-label">System</div>
+    <button class="nav-btn" onclick="nav('settings',this)">
+      <span class="ni">⚙️</span><span class="label">Settings</span>
+    </button>
+    <button class="nav-btn" onclick="nav('emailcfg',this)">
+      <span class="ni">📧</span><span class="label">Email Config</span>
+    </button>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="admin-chip">
+      <div class="admin-av" id="sb-av">A</div>
+      <div class="admin-info">
+        <div class="admin-name" id="sb-name">Admin</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+      <button class="logout-btn" title="Logout" onclick="doLogout()">⏻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <h1 id="page-title">Overview</h1>
+    <p id="page-sub">Campus ReShare Hub — Admin Control Panel</p>
+  </div>
+  <div class="topbar-right">
+    <div class="tb-search">
+      <span>🔍</span>
+      <input type="text" id="global-search" placeholder="Quick search..." oninput="globalSearch(this.value)"/>
+    </div>
+    <button class="tb-btn" onclick="nav('activity',document.querySelector('.nav-btn'))">
+      🔔<span class="tb-notif-dot" id="notif-dot"></span>
+    </button>
+    <button class="tb-btn" onclick="window.location.href='signin.html'" title="Back to Home" style="display:flex;align-items:center;gap:6px;padding:7px 14px;color:var(--t2);font-size:12px;font-weight:600;">
+      🏠 <span>Home</span>
+    </button>
+    <div class="tb-admin-chip">
+      <span>👑 ADMIN</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: OVERVIEW ═══ -->
+<div class="page active" id="pg-overview">
+  <div class="stats-grid">
+    <div class="stat-box bl"><div class="stat-icon">👥</div><div class="stat-val" id="sv-users">0</div><div class="stat-lbl">Total Users</div><div class="stat-trend up" id="st-users">—</div></div>
+    <div class="stat-box re"><div class="stat-icon">🔴</div><div class="stat-val" id="sv-lost">0</div><div class="stat-lbl">Lost Items</div><div class="stat-trend" id="st-lost">—</div></div>
+    <div class="stat-box gr"><div class="stat-icon">🟢</div><div class="stat-val" id="sv-found">0</div><div class="stat-lbl">Found Items</div><div class="stat-trend up" id="st-found">—</div></div>
+    <div class="stat-box ye"><div class="stat-icon">🏷️</div><div class="stat-val" id="sv-claims">0</div><div class="stat-lbl">Total Claims</div><div class="stat-trend" id="st-claims">—</div></div>
+    <div class="stat-box pu"><div class="stat-icon">🚫</div><div class="stat-val" id="sv-banned">0</div><div class="stat-lbl">Banned Users</div><div class="stat-trend dn" id="st-banned">—</div></div>
+  </div>
+
+  <div class="ov-grid">
+    <!-- Recent Claims -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>🏷️ Pending Claims</h2>
+        <div class="panel-head-right">
+          <span class="ph-count" id="pending-count">0 pending</span>
+          <button class="f-btn f-btn-blue" onclick="nav('claims',null)" style="font-size:11px;padding:5px 10px;">View All</button>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Claimant</th><th>Item</th><th>Time</th><th>Actions</th></tr></thead>
+        <tbody id="ov-claims-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="panel">
+      <div class="panel-head"><h2>📋 Recent Activity</h2></div>
+      <div class="feed-list" id="ov-feed" style="max-height:360px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Recently Added Items -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>📦 Recently Added Items</h2>
+      <span class="ph-count" id="recent-items-count"></span>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Type</th><th>Category</th><th>Posted By</th><th>Location</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody id="ov-items-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: ANALYTICS ═══ -->
+<div class="page" id="pg-analytics">
+  <div class="stats-grid">
+    <div class="stat-box bl"><div class="stat-icon">📊</div><div class="stat-val" id="an-total">0</div><div class="stat-lbl">All Items</div></div>
+    <div class="stat-box gr"><div class="stat-icon">✅</div><div class="stat-val" id="an-approved">0</div><div class="stat-lbl">Approved Claims</div></div>
+    <div class="stat-box re"><div class="stat-icon">❌</div><div class="stat-val" id="an-rejected">0</div><div class="stat-lbl">Rejected Claims</div></div>
+    <div class="stat-box ye"><div class="stat-icon">⏳</div><div class="stat-val" id="an-pending">0</div><div class="stat-lbl">Pending Claims</div></div>
+    <div class="stat-box pu"><div class="stat-icon">🔗</div><div class="stat-val" id="an-matches">0</div><div class="stat-lbl">Matched Pairs</div></div>
+  </div>
+  <div class="ov-grid">
+    <div class="panel">
+      <div class="panel-head"><h2>📊 Items by Category</h2></div>
+      <div class="mini-chart" id="cat-chart"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>📊 Claims by Status</h2></div>
+      <div class="mini-chart" id="status-chart"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>📊 Top Active Users</h2></div>
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Items Posted</th><th>Claims Made</th><th>Status</th></tr></thead>
+      <tbody id="top-users-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: LOST ITEMS ═══ -->
+<div class="page" id="pg-lost">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🔴 Lost Items</h2>
+      <div class="panel-head-right">
+        <span class="ph-count" id="lost-count">0 items</span>
+        <button class="f-btn f-btn-red" onclick="confirmDeleteAll('lost')">🗑 Delete All</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="f-input" id="lost-search" type="text" placeholder="Search by name, location..." oninput="filterItems('lost')"/>
+      <select class="f-select" id="lost-cat" onchange="filterItems('lost')">
+        <option value="">All Categories</option>
+        <option>Electronics</option><option>Personal Items</option>
+        <option>Books</option><option>Accessories</option>
+        <option>Clothing</option><option>Others</option>
+      </select>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Category</th><th>Location</th><th>Posted By</th><th>Phone</th><th>Date</th><th>Claims</th><th>Actions</th></tr></thead>
+      <tbody id="lost-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: FOUND ITEMS ═══ -->
+<div class="page" id="pg-found">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🟢 Found Items</h2>
+      <div class="panel-head-right">
+        <span class="ph-count" id="found-count">0 items</span>
+        <button class="f-btn f-btn-red" onclick="confirmDeleteAll('found')">🗑 Delete All</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="f-input" id="found-search" type="text" placeholder="Search by name, location..." oninput="filterItems('found')"/>
+      <select class="f-select" id="found-cat" onchange="filterItems('found')">
+        <option value="">All Categories</option>
+        <option>Electronics</option><option>Personal Items</option>
+        <option>Books</option><option>Accessories</option>
+        <option>Clothing</option><option>Others</option>
+      </select>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Category</th><th>Location</th><th>Posted By</th><th>Phone</th><th>Date</th><th>Claims</th><th>Actions</th></tr></thead>
+      <tbody id="found-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: CLAIMS ═══ -->
+<div class="page" id="pg-claims">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🏷️ All Claims</h2>
+      <div class="panel-head-right">
+        <span class="ph-count" id="claims-count">0 claims</span>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="f-input" id="claims-search" type="text" placeholder="Search by name, item..." oninput="filterClaims()"/>
+      <select class="f-select" id="claims-status" onchange="filterClaims()">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Claimant</th><th>Item</th><th>Type</th><th>Phone</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="claims-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: USERS ═══ -->
+<div class="page" id="pg-users">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>👥 All Users</h2>
+      <div class="panel-head-right">
+        <span class="ph-count" id="users-count">0 users</span>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="f-input" id="users-search" type="text" placeholder="Search by email or name..." oninput="filterUsers()"/>
+      <select class="f-select" id="users-status" onchange="filterUsers()">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="banned">Banned</option>
+        <option value="warned">Warned</option>
+      </select>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Items Posted</th><th>Claims</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="users-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: BANNED ═══ -->
+<div class="page" id="pg-banned">
+  <div class="panel">
+    <div class="panel-head"><h2>🚫 Banned Users</h2><span class="ph-count" id="banned-count">0 banned</span></div>
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Reason</th><th>Banned On</th><th>Banned By</th><th>Actions</th></tr></thead>
+      <tbody id="banned-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: ACTIVITY ═══ -->
+<div class="page" id="pg-activity">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>📋 Full Activity Log</h2>
+      <div class="panel-head-right">
+        <button class="f-btn f-btn-red" onclick="clearActivityLog()">🗑 Clear Log</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="setActTab('all',this)">All</button>
+      <button class="tab-btn" onclick="setActTab('claim',this)">Claims</button>
+      <button class="tab-btn" onclick="setActTab('item',this)">Items</button>
+      <button class="tab-btn" onclick="setActTab('user',this)">Users</button>
+      <button class="tab-btn" onclick="setActTab('admin',this)">Admin Actions</button>
+    </div>
+    <div class="feed-list" id="full-feed"></div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: FLAGGED ═══ -->
+<div class="page" id="pg-reports">
+  <div class="panel">
+    <div class="panel-head"><h2>⚠️ Flagged Items</h2><span class="ph-count" id="flagged-count">0 flagged</span></div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Type</th><th>Reason</th><th>Flagged By</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody id="flagged-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PAGE: SETTINGS ═══ -->
+<div class="page" id="pg-settings">
+  <div class="settings-grid">
+    <div class="s-card">
+      <h3>🔐 Admin Credentials</h3>
+      <div class="s-field"><label>Admin Email</label><input type="email" id="cfg-admin-email" placeholder="admin@aec.edu.in"/></div>
+      <div class="s-field"><label>New Password</label><input type="password" id="cfg-admin-pass" placeholder="Change password"/></div>
+      <button class="s-save" onclick="saveAdminCreds()">💾 Save Credentials</button>
+    </div>
+    <div class="s-card">
+      <h3>🏫 Platform Settings</h3>
+      <div class="s-field"><label>Platform Name</label><input type="text" id="cfg-platform-name" value="Campus ReShare Hub"/></div>
+      <div class="s-field"><label>Allowed Email Domain</label><input type="text" id="cfg-domain" placeholder="@aec.edu.in"/></div>
+      <div class="s-field"><label>Max Items Per User</label><input type="number" id="cfg-max-items" value="10"/></div>
+      <button class="s-save" onclick="savePlatformSettings()">💾 Save Settings</button>
+    </div>
+    <div class="s-card">
+      <h3>⚠️ Danger Zone</h3>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.7;">These actions are irreversible. Proceed with extreme caution.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="s-save s-danger" onclick="confirmDeleteAll('lost')">🗑 Delete ALL Lost Items</button>
+        <button class="s-save s-danger" onclick="confirmDeleteAll('found')">🗑 Delete ALL Found Items</button>
+        <button class="s-save s-danger" onclick="confirmDeleteAll('claims')">🗑 Delete ALL Claims</button>
+        <button class="s-save s-danger" onclick="confirmDeleteAll('users')">🗑 Delete ALL Users</button>
+        <button class="s-save s-danger" onclick="confirmDeleteAll('all')">💥 WIPE ENTIRE DATABASE</button>
+      </div>
+    </div>
+    <div class="s-card">
+      <h3>📄 Export Data</h3>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:14px;">Download all data as PDF reports for backup or analysis.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="s-save" onclick="exportData('lostItems')">📄 Export Lost Items</button>
+        <button class="s-save" onclick="exportData('foundItems')">📄 Export Found Items</button>
+        <button class="s-save" onclick="exportData('claims')">📄 Export Claims</button>
+        <button class="s-save" onclick="exportData('users')">📄 Export Users</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: EMAIL CONFIG ═══ -->
+<div class="page" id="pg-emailcfg">
+  <div class="settings-grid">
+    <div class="s-card">
+      <h3>🔑 EmailJS Keys</h3>
+      <div class="s-field"><label>Public Key</label><input type="text" id="ej-pub" placeholder="Your EmailJS public key"/></div>
+      <div class="s-field"><label>Service ID</label><input type="text" id="ej-svc" placeholder="service_xxxxxxx"/></div>
+      <div class="s-field"><label>Template ID (Claim Alert)</label><input type="text" id="ej-tpl" placeholder="template_xxxxxxx"/></div>
+      <div class="s-field"><label>Template ID (Ban Notice)</label><input type="text" id="ej-tpl-ban" placeholder="template_xxxxxxx"/></div>
+      <div class="s-field"><label>Template ID (Warning)</label><input type="text" id="ej-tpl-warn" placeholder="template_xxxxxxx"/></div>
+      <button class="s-save" onclick="saveEmailConfig()">💾 Save Email Config</button>
+    </div>
+    <div class="s-card">
+      <h3>📋 Template Variables</h3>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:10px;">Use these in your EmailJS templates:</p>
+      <div class="code-block">
+        <span class="var">{{to_email}}</span> — Recipient email<br>
+        <span class="var">{{to_name}}</span> — Recipient name<br>
+        <span class="var">{{item_name}}</span> — Item name<br>
+        <span class="var">{{item_type}}</span> — lost / found<br>
+        <span class="var">{{claimant_name}}</span> — Who claimed<br>
+        <span class="var">{{claimant_phone}}</span> — Their phone<br>
+        <span class="var">{{claimant_email}}</span> — Their email<br>
+        <span class="var">{{status}}</span> — approved/rejected<br>
+        <span class="var">{{reason}}</span> — Ban/warn reason<br>
+        <span class="var">{{admin_note}}</span> — Custom message<br>
+        <span class="var">{{claim_time}}</span> — Timestamp
+      </div>
+    </div>
+    <div class="s-card">
+      <h3>🧪 Send Test Email</h3>
+      <div class="s-field"><label>Test Email Address</label><input type="email" id="ej-test-addr" placeholder="test@email.com"/></div>
+      <div class="s-field"><label>Template to Test</label>
+        <select id="ej-test-tpl">
+          <option value="claim">Claim Alert</option>
+          <option value="ban">Ban Notice</option>
+          <option value="warn">Warning</option>
+        </select>
+      </div>
+      <button class="s-save" onclick="sendTestEmail()">📤 Send Test Email</button>
+    </div>
+    <div class="s-card">
+      <h3>⚡ Quick Setup Guide</h3>
+      <p style="font-size:12px;color:var(--t2);line-height:1.9;">
+        1. Go to <a href="https://www.emailjs.com" target="_blank" style="color:var(--blue)">emailjs.com</a> → Sign up free<br>
+        2. Add an Email Service (Gmail/Outlook) → get <strong style="color:var(--text)">Service ID</strong><br>
+        3. Create 3 Email Templates → get <strong style="color:var(--text)">Template IDs</strong><br>
+        4. Account → API Keys → copy <strong style="color:var(--text)">Public Key</strong><br>
+        5. Paste all keys above and Save<br>
+        6. Send a test email to verify ✅
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: MARKETPLACE ═══ -->
+<div class="page" id="pg-marketplace">
+
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+    <div class="stat-box bl"><div class="stat-icon">🛒</div><div class="stat-val" id="mk-total">0</div><div class="stat-lbl">Total Listings</div></div>
+    <div class="stat-box gr"><div class="stat-icon">✅</div><div class="stat-val" id="mk-available">0</div><div class="stat-lbl">Available</div></div>
+    <div class="stat-box ye"><div class="stat-icon">🤝</div><div class="stat-val" id="mk-sold">0</div><div class="stat-lbl">Sold / Closed</div></div>
+    <div class="stat-box re"><div class="stat-icon">🚩</div><div class="stat-val" id="mk-flagged-stat">0</div><div class="stat-lbl">Flagged</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🛒 Marketplace Listings</h2>
+      <div class="panel-head-right">
+        <span class="ph-count" id="mk-count">0 listings</span>
+        <button class="f-btn f-btn-blue" onclick="toggleMkView()" id="mk-view-btn"
+          style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px;">
+          <span id="mk-view-ico">⊞</span>&nbsp;Card View
+        </button>
+        <button class="f-btn f-btn-red" onclick="confirmDeleteAllMarket()" style="font-size:11px;padding:5px 12px;">🗑 Delete All</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="f-input" id="mk-search" type="text" placeholder="Search title, seller, price..." oninput="renderMarketplaceTable()"/>
+      <select class="f-select" id="mk-cat" onchange="renderMarketplaceTable()">
+        <option value="">All Categories</option>
+        <option>Electronics</option><option>Books &amp; Notes</option>
+        <option>Clothing</option><option>Accessories</option>
+        <option>Furniture</option><option>Sports</option><option>Others</option>
+      </select>
+      <select class="f-select" id="mk-status-filter" onchange="renderMarketplaceTable()">
+        <option value="">All Status</option>
+        <option value="available">Available</option>
+        <option value="sold">Sold</option>
+        <option value="flagged">Flagged</option>
+      </select>
+      <select class="f-select" id="mk-sort" onchange="renderMarketplaceTable()">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+      </select>
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div id="mk-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Listing</th><th>Category</th><th>Price</th><th>Condition</th><th>Seller</th><th>Phone</th><th>Posted</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="mk-body"></tbody>
+      </table>
+    </div>
+
+    <!-- CARD VIEW -->
+    <div id="mk-card-wrap" style="display:none;padding:18px;">
+      <div id="mk-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MARKETPLACE DETAIL MODAL ═══ -->
+<div class="modal-bg" id="mk-modal">
+  <div class="modal-card" style="max-width:600px;">
+    <div class="m-head"><h3>🛒 Listing Detail</h3><button class="m-close" onclick="closeModal('mk-modal')">✕</button></div>
+    <div class="m-body" id="mk-modal-body"></div>
+    <div class="m-foot" id="mk-modal-foot"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /wrap -->
+
+<!-- ═══ EMAIL MODAL ═══ -->
+<div class="modal-bg" id="email-modal">
+  <div class="modal-card">
+    <div class="m-head"><h3>📧 Send Email Notification</h3><button class="m-close" onclick="closeModal('email-modal')">✕</button></div>
+    <div class="m-body" id="email-modal-body"></div>
+    <div class="m-foot">
+      <button class="m-btn m-btn-ghost" onclick="closeModal('email-modal')">Cancel</button>
+      <button class="m-btn m-btn-primary" onclick="confirmSendEmail()">📤 Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BAN MODAL ═══ -->
+<div class="modal-bg" id="ban-modal">
+  <div class="modal-card">
+    <div class="m-head"><h3>🚫 Ban User</h3><button class="m-close" onclick="closeModal('ban-modal')">✕</button></div>
+    <div class="m-body">
+      <div class="m-row"><div class="m-label">User</div><div class="m-val" id="ban-user-email">—</div></div>
+      <div style="margin-top:10px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);display:block;margin-bottom:6px;">Reason for Ban</label>
+        <textarea id="ban-reason" style="width:100%;padding:9px 12px;background:var(--s2);border:1.5px solid var(--border2);border-radius:var(--r2);color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:80px;" placeholder="Explain why this user is being banned..."></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--t2);cursor:pointer;">
+        <input type="checkbox" id="ban-notify" checked> Send email notification to user
+      </label>
+    </div>
+    <div class="m-foot">
+      <button class="m-btn m-btn-ghost" onclick="closeModal('ban-modal')">Cancel</button>
+      <button class="m-btn m-btn-red" onclick="confirmBan()">🚫 Confirm Ban</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WARN MODAL ═══ -->
+<div class="modal-bg" id="warn-modal">
+  <div class="modal-card">
+    <div class="m-head"><h3>⚠️ Send Warning</h3><button class="m-close" onclick="closeModal('warn-modal')">✕</button></div>
+    <div class="m-body">
+      <div class="m-row"><div class="m-label">User</div><div class="m-val" id="warn-user-email">—</div></div>
+      <div style="margin-top:10px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);display:block;margin-bottom:6px;">Warning Message</label>
+        <textarea id="warn-reason" style="width:100%;padding:9px 12px;background:var(--s2);border:1.5px solid var(--border2);border-radius:var(--r2);color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:80px;" placeholder="What is this warning about?"></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--t2);cursor:pointer;">
+        <input type="checkbox" id="warn-notify" checked> Send email warning to user
+      </label>
+    </div>
+    <div class="m-foot">
+      <button class="m-btn m-btn-ghost" onclick="closeModal('warn-modal')">Cancel</button>
+      <button class="m-btn" style="background:var(--yellow);color:#000;" onclick="confirmWarn()">⚠️ Send Warning</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DIALOG ═══ -->
+<div class="confirm-bg" id="confirm-bg">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Are you sure?</div>
+    <div class="confirm-msg" id="confirm-msg">This action cannot be undone.</div>
+    <div class="confirm-actions">
+      <button class="m-btn m-btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="m-btn m-btn-red" id="confirm-ok-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div id="toast"><div id="toast-icon">✅</div><div><div id="toast-text">Done</div><div id="toast-sub"></div></div></div>
+
+<script>
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+var S = {
+  lostItems:  [],
+  foundItems: [],
+  allClaims:  [],   // [{_itemId, _claimId, ...claimData}]
+  users:      {},   // email → {email, status, joined, reason, bannedOn}
+  actLog:     [],   // activity log entries
+  flagged:    [],   // flagged items
+  pendingConfirm: null,
+  pendingBanEmail: null,
+  pendingWarnEmail: null,
+  pendingEmail: null,
+  actTab: 'all'
+};
+
+var ejsCfg = JSON.parse(localStorage.getItem('ejsCfg') || '{}');
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+window.onload = function(){
+  var user = localStorage.getItem('user') || 'admin@aec.edu.in';
+  // Only allow admin
+  if(!user){ window.location.href='login.html'; return; }
+  document.getElementById('sb-name').textContent  = user;
+  document.getElementById('sb-av').textContent    = user[0].toUpperCase();
+
+  // Load saved config
+  loadEmailConfigUI();
+  loadPlatformSettings();
+
+  // Start Firebase listeners
+  listenLostItems();
+  listenFoundItems();
+  listenClaims();
+  listenUsers();
+  listenFlagged();
+  listenMarketplace();
+};
+
+// ════════════════════════════════════════════
+// FIREBASE LISTENERS
+// ════════════════════════════════════════════
+function listenLostItems(){
+  db.ref('lostItems').on('value', function(snap){
+    S.lostItems = [];
+    snap.forEach(function(c){ S.lostItems.push({id:c.key,type:'lost',...c.val()}); });
+    refreshAll();
+  });
+}
+function listenFoundItems(){
+  db.ref('foundItems').on('value', function(snap){
+    S.foundItems = [];
+    snap.forEach(function(c){ S.foundItems.push({id:c.key,type:'found',...c.val()}); });
+    refreshAll();
+  });
+}
+function listenClaims(){
+  db.ref('claims').on('value', function(snap){
+    S.allClaims = [];
+    snap.forEach(function(itemSnap){
+      itemSnap.forEach(function(claimSnap){
+        var d = claimSnap.val();
+        d._itemId  = itemSnap.key;
+        d._claimId = claimSnap.key;
+        S.allClaims.push(d);
+      });
+    });
+    S.allClaims.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
+    refreshAll();
+  });
+}
+function listenUsers(){
+  db.ref('users').on('value', function(snap){
+    S.users = {};
+    snap.forEach(function(c){ S.users[c.key] = c.val(); });
+    // Build users from items if not in DB yet
+    buildUsersFromItems();
+    refreshAll();
+  });
+}
+function listenFlagged(){
+  db.ref('flagged').on('value', function(snap){
+    S.flagged = [];
+    snap.forEach(function(c){ S.flagged.push({id:c.key,...c.val()}); });
+    refreshAll();
+  });
+}
+
+function buildUsersFromItems(){
+  // Derive users from item contact info (since app uses email login)
+  [...S.lostItems,...S.foundItems].forEach(function(item){
+    var email = item.userEmail || item.contactPhone || null;
+    if(!email) return;
+    if(!S.users[sanitizeKey(email)]){
+      S.users[sanitizeKey(email)] = { email: email, name: item.contactName||email, status:'active', joined: item.date||'—' };
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+// REFRESH ALL
+// ════════════════════════════════════════════
+function refreshAll(){
+  buildUsersFromItems();
+  updateSidebarCounts();
+  updateStats();
+  renderOverview();
+  renderItemsTable('lost');
+  renderItemsTable('found');
+  renderClaimsTable();
+  renderUsersTable();
+  renderBannedTable();
+  renderActivityFeed();
+  renderFlagged();
+  renderAnalytics();
+  renderMarketplaceTable();
+  updateMarketStats();
+  updateMarketSidebarCount();
+}
+
+// ════════════════════════════════════════════
+// SIDEBAR COUNTS
+// ════════════════════════════════════════════
+function updateSidebarCounts(){
+  var pending = S.allClaims.filter(c=>c.status==='pending'||!c.status).length;
+  var banned  = Object.values(S.users).filter(u=>u.status==='banned').length;
+  setText('sb-lost',   S.lostItems.length);
+  setText('sb-found',  S.foundItems.length);
+  setText('sb-claims', pending);
+  setText('sb-users',  Object.keys(S.users).length);
+  setText('sb-banned', banned);
+  setText('sb-flagged',S.flagged.length);
+  document.getElementById('notif-dot').style.display = pending>0 ? 'block':'none';
+}
+
+// ════════════════════════════════════════════
+// STATS
+// ════════════════════════════════════════════
+function updateStats(){
+  var userCount  = Object.keys(S.users).length;
+  var bannedCount= Object.values(S.users).filter(u=>u.status==='banned').length;
+  setText('sv-users',  userCount);
+  setText('sv-lost',   S.lostItems.length);
+  setText('sv-found',  S.foundItems.length);
+  setText('sv-claims', S.allClaims.length);
+  setText('sv-banned', bannedCount);
+}
+
+// ════════════════════════════════════════════
+// OVERVIEW
+// ════════════════════════════════════════════
+function renderOverview(){
+  // Pending claims table
+  var pending = S.allClaims.filter(c=>!c.status||c.status==='pending').slice(0,6);
+  setText('pending-count', pending.length+' pending');
+  var body = document.getElementById('ov-claims-body');
+  if(!pending.length){
+    body.innerHTML = `<tr class="empty-row"><td colspan="4">✅ No pending claims</td></tr>`;
+  } else {
+    body.innerHTML = pending.map(function(c){
+      var item = findItem(c._itemId);
+      var name = c.claimantName||c.userEmail||'Unknown';
+      return `<tr>
+        <td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#3b82f6,#a78bfa)">${name[0].toUpperCase()}</div><div><div class="u-name">${esc(name)}</div><div class="u-email">${esc(c.claimantEmail||c.userEmail||'—')}</div></div></div></td>
+        <td>${esc(item?item.name:'Unknown')}</td>
+        <td>${esc(c.time||'—')}</td>
+        <td><div class="act-row">
+          <button class="a-btn a-approve" onclick="updateClaim('${c._itemId}','${c._claimId}','approved','${esc(c.claimantEmail||'')}','${esc(name)}','${esc(c.claimantPhone||'')}','${esc(item?item.name:'')}','${item?item.type:''}')">✅</button>
+          <button class="a-btn a-reject"  onclick="updateClaim('${c._itemId}','${c._claimId}','rejected','${esc(c.claimantEmail||'')}','${esc(name)}','${esc(c.claimantPhone||'')}','${esc(item?item.name:'')}','${item?item.type:''}')">❌</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Recent activity (mini)
+  var feed = document.getElementById('ov-feed');
+  var log = buildActivityLog().slice(0,12);
+  feed.innerHTML = log.length ? log.map(feedRow).join('') : '<div style="padding:24px;text-align:center;color:var(--t3)">No activity yet</div>';
+
+  // Recent items
+  var allItems = [...S.lostItems,...S.foundItems].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,8);
+  setText('recent-items-count', allItems.length+' latest');
+  document.getElementById('ov-items-body').innerHTML = allItems.map(function(item){
+    return itemTableRow(item);
+  }).join('') || `<tr class="empty-row"><td colspan="7">No items yet</td></tr>`;
+}
+
+// ════════════════════════════════════════════
+// ITEMS TABLE
+// ════════════════════════════════════════════
+function renderItemsTable(type){
+  var list = type==='lost' ? S.lostItems : S.foundItems;
+  var search = val(''+type+'-search').toLowerCase();
+  var cat    = val(''+type+'-cat');
+  var filtered = list.filter(function(i){
+    var matchSearch = !search || (i.name||'').toLowerCase().includes(search) || (i.location||'').toLowerCase().includes(search);
+    var matchCat    = !cat    || i.category===cat;
+    return matchSearch && matchCat;
+  });
+  setText(''+type+'-count', filtered.length+' items');
+  var body = document.getElementById(''+type+'-body');
+  body.innerHTML = filtered.length ? filtered.map(itemTableRow).join('') : `<tr class="empty-row"><td colspan="8">No items found</td></tr>`;
+}
+
+function itemTableRow(item){
+  var imgHtml = (item.image&&item.image.length>20)
+    ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='📦'">`
+    : '📦';
+  var claimCount = S.allClaims.filter(c=>c._itemId===item.id).length;
+  return `<tr>
+    <td><div class="item-cell">
+      <div class="item-thumb">${imgHtml}</div>
+      <div><div class="item-title-text">${esc(item.name||'Untitled')}</div><div class="item-meta-text">ID: ${item.id.substring(0,8)}…</div></div>
+    </div></td>
+    <td>${esc(item.category||'—')}</td>
+    <td>${esc(item.location||'—')}</td>
+    <td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#3b82f6,#7c3aed);width:26px;height:26px;font-size:10px">${(item.contactName||'?')[0].toUpperCase()}</div><div class="u-name" style="font-size:12px">${esc(item.contactName||'—')}</div></div></td>
+    <td>${esc(item.contactPhone||'—')}</td>
+    <td>${esc(item.date||'—')}</td>
+    <td><span class="badge b-${claimCount>0?'warn':'active'}">${claimCount} claim${claimCount!==1?'s':''}</span></td>
+    <td><div class="act-row">
+      <button class="a-btn a-del" onclick="deleteItem('${item.type}','${item.id}','${esc(item.name||'')}')">🗑 Delete</button>
+      <button class="a-btn a-warn" onclick="flagItem('${item.id}','${item.type}','${esc(item.name||'')}')">🚩 Flag</button>
+    </div></td>
+  </tr>`;
+}
+
+function filterItems(type){ renderItemsTable(type); }
+
+// ════════════════════════════════════════════
+// CLAIMS TABLE
+// ════════════════════════════════════════════
+function renderClaimsTable(){
+  var search    = val('claims-search').toLowerCase();
+  var statusF   = val('claims-status');
+  var filtered  = S.allClaims.filter(function(c){
+    var name = (c.claimantName||c.userEmail||'').toLowerCase();
+    var item = findItem(c._itemId);
+    var iname = (item?item.name:'').toLowerCase();
+    var matchSearch = !search || name.includes(search) || iname.includes(search);
+    var matchStatus = !statusF || (c.status||'pending')===statusF;
+    return matchSearch && matchStatus;
+  });
+  setText('claims-count', filtered.length+' claims');
+  var body = document.getElementById('claims-body');
+  body.innerHTML = filtered.length ? filtered.map(claimTableRow).join('') : `<tr class="empty-row"><td colspan="7">No claims found</td></tr>`;
+}
+
+function claimTableRow(c){
+  var item  = findItem(c._itemId);
+  var iName = item?item.name:'Unknown';
+  var iType = item?item.type:'—';
+  var name  = c.claimantName||c.userEmail||'Unknown';
+  var email = c.claimantEmail||c.userEmail||'—';
+  var phone = c.claimantPhone||'—';
+  var status= c.status||'pending';
+  var bdg   = status==='approved'?'b-approved':status==='rejected'?'b-rejected':'b-pending';
+  var lbl   = status==='approved'?'✅ Approved':status==='rejected'?'❌ Rejected':'⏳ Pending';
+  return `<tr>
+    <td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#6366f1,#a78bfa);width:28px;height:28px;font-size:11px">${name[0].toUpperCase()}</div><div><div class="u-name">${esc(name)}</div><div class="u-email">${esc(email)}</div></div></div></td>
+    <td><div class="item-title-text">${esc(iName)}</div></td>
+    <td><span class="badge b-${iType}">${iType.toUpperCase()}</span></td>
+    <td>${esc(phone)}</td>
+    <td style="white-space:nowrap;font-size:11px">${esc(c.time||'—')}</td>
+    <td><span class="badge ${bdg}">${lbl}</span></td>
+    <td><div class="act-row">
+      ${status==='pending'?`
+        <button class="a-btn a-approve" onclick="updateClaim('${c._itemId}','${c._claimId}','approved','${esc(email)}','${esc(name)}','${esc(phone)}','${esc(iName)}','${iType}')">✅ Approve</button>
+        <button class="a-btn a-reject"  onclick="updateClaim('${c._itemId}','${c._claimId}','rejected','${esc(email)}','${esc(name)}','${esc(phone)}','${esc(iName)}','${iType}')">❌ Reject</button>
+      `:''}
+      <button class="a-btn a-email" onclick="openEmailModal('${c._itemId}','${esc(email)}','${esc(name)}','${esc(phone)}','${esc(iName)}','${iType}')">📧 Email</button>
+      <button class="a-btn a-del"   onclick="deleteClaim('${c._itemId}','${c._claimId}')">🗑</button>
+    </div></td>
+  </tr>`;
+}
+
+function filterClaims(){ renderClaimsTable(); }
+
+// ════════════════════════════════════════════
+// USERS TABLE
+// ════════════════════════════════════════════
+function renderUsersTable(){
+  var search  = val('users-search').toLowerCase();
+  var statusF = val('users-status');
+  var list    = Object.values(S.users);
+  var filtered= list.filter(function(u){
+    var matchSearch = !search || (u.email||'').toLowerCase().includes(search) || (u.name||'').toLowerCase().includes(search);
+    var matchStatus = !statusF || (u.status||'active')===statusF;
+    return matchSearch && matchStatus;
+  });
+  setText('users-count', filtered.length+' users');
+  var body = document.getElementById('users-body');
+  body.innerHTML = filtered.length ? filtered.map(function(u){
+    var email     = u.email||'—';
+    var name      = u.name||email;
+    var status    = u.status||'active';
+    var joined    = u.joined||'—';
+    var itemCount = [...S.lostItems,...S.foundItems].filter(i=>(i.userEmail===email||i.contactPhone===email)).length;
+    var claimCount= S.allClaims.filter(c=>c.userEmail===email||c.claimantEmail===email).length;
+    var bdg = status==='banned'?'b-banned':status==='warned'?'b-warn':'b-active';
+    var lbl = status==='banned'?'🚫 Banned':status==='warned'?'⚠️ Warned':'✅ Active';
+    return `<tr>
+      <td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)">${name[0].toUpperCase()}</div><div><div class="u-name">${esc(name)}</div><div class="u-email">${esc(email)}</div></div></div></td>
+      <td>${itemCount}</td>
+      <td>${claimCount}</td>
+      <td class="u-joined">${esc(joined)}</td>
+      <td><span class="badge ${bdg}">${lbl}</span></td>
+      <td><div class="act-row">
+        ${status==='banned'
+          ? `<button class="a-btn a-unban" onclick="unbanUser('${esc(email)}')">✅ Unban</button>`
+          : `<button class="a-btn a-ban"  onclick="openBanModal('${esc(email)}')">🚫 Ban</button>`}
+        <button class="a-btn a-warn"  onclick="openWarnModal('${esc(email)}')">⚠️ Warn</button>
+        <button class="a-btn a-del"   onclick="deleteUser('${esc(email)}')">🗑 Remove</button>
+        <button class="a-btn a-email" onclick="openEmailModalUser('${esc(email)}','${esc(name)}')">📧 Email</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="6">No users found</td></tr>`;
+}
+
+function filterUsers(){ renderUsersTable(); }
+
+// ════════════════════════════════════════════
+// BANNED TABLE
+// ════════════════════════════════════════════
+function renderBannedTable(){
+  var banned = Object.values(S.users).filter(u=>u.status==='banned');
+  setText('banned-count', banned.length+' banned');
+  var body = document.getElementById('banned-body');
+  body.innerHTML = banned.length ? banned.map(function(u){
+    return `<tr>
+      <td><div class="user-cell"><div class="u-av" style="background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,0.3)">${(u.email||'?')[0].toUpperCase()}</div><div><div class="u-name">${esc(u.name||u.email)}</div><div class="u-email">${esc(u.email)}</div></div></div></td>
+      <td>${esc(u.reason||'No reason given')}</td>
+      <td>${esc(u.bannedOn||'—')}</td>
+      <td>${esc(u.bannedBy||'Admin')}</td>
+      <td><div class="act-row">
+        <button class="a-btn a-unban" onclick="unbanUser('${esc(u.email)}')">✅ Unban</button>
+        <button class="a-btn a-del"   onclick="deleteUser('${esc(u.email)}')">🗑 Remove</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="5">No banned users</td></tr>`;
+}
+
+// ════════════════════════════════════════════
+// ACTIVITY FEED
+// ════════════════════════════════════════════
+function buildActivityLog(){
+  var log = [];
+  S.lostItems.forEach(function(i){
+    log.push({type:'item',time:i.date||'',title:'Lost item reported: '+i.name,sub:'by '+(i.contactName||'Unknown')+' · '+i.location,ico:'🔴',cls:'re'});
+  });
+  S.foundItems.forEach(function(i){
+    log.push({type:'item',time:i.date||'',title:'Found item reported: '+i.name,sub:'by '+(i.contactName||'Unknown')+' · '+i.location,ico:'🟢',cls:'gr'});
+  });
+  S.allClaims.forEach(function(c){
+    var item=findItem(c._itemId);
+    log.push({type:'claim',time:c.time||'',title:(c.claimantName||'Someone')+' claimed '+(item?item.name:'an item'),sub:'Status: '+(c.status||'pending'),ico:'🏷️',cls:'ye'});
+  });
+  Object.values(S.users).filter(u=>u.status==='banned').forEach(function(u){
+    log.push({type:'user',time:u.bannedOn||'',title:'User banned: '+u.email,sub:'Reason: '+(u.reason||'—'),ico:'🚫',cls:'re'});
+  });
+  S.flagged.forEach(function(f){
+    log.push({type:'item',time:f.date||'',title:'Item flagged: '+f.name,sub:'Reason: '+(f.reason||'—'),ico:'🚩',cls:'ye'});
+  });
+  // Merge stored admin log
+  var stored = JSON.parse(localStorage.getItem('adminLog')||'[]');
+  log = log.concat(stored.map(function(e){ return {...e,type:'admin'}; }));
+  log.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
+  return log;
+}
+
+function feedRow(e){
+  var bgMap = {re:'rgba(239,68,68,0.1)',gr:'rgba(34,197,94,0.1)',ye:'rgba(245,158,11,0.1)',bl:'rgba(59,130,246,0.1)',pu:'rgba(167,139,250,0.1)'};
+  return `<div class="feed-row">
+    <div class="feed-ico" style="background:${bgMap[e.cls]||bgMap.bl}">${e.ico}</div>
+    <div class="feed-body"><div class="feed-title">${esc(e.title)}</div><div class="feed-sub">${esc(e.sub)}</div></div>
+    <div class="feed-time">${esc(e.time)}</div>
+  </div>`;
+}
+
+function renderActivityFeed(){
+  var log     = buildActivityLog();
+  var tabF    = S.actTab;
+  var filtered= tabF==='all' ? log : log.filter(e=>e.type===tabF);
+  var full    = document.getElementById('full-feed');
+  var mini    = document.getElementById('ov-feed');
+  if(full)  full.innerHTML  = filtered.length ? filtered.map(feedRow).join('') : '<div style="padding:32px;text-align:center;color:var(--t3)">No activity yet</div>';
+  if(mini)  mini.innerHTML  = log.slice(0,12).map(feedRow).join('') || '<div style="padding:24px;text-align:center;color:var(--t3)">No activity</div>';
+}
+
+function setActTab(tab,btn){
+  S.actTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderActivityFeed();
+}
+
+function clearActivityLog(){
+  localStorage.removeItem('adminLog');
+  toast('🗑️','Activity log cleared','Admin actions log has been reset');
+  refreshAll();
+}
+
+// ════════════════════════════════════════════
+// FLAGGED
+// ════════════════════════════════════════════
+function renderFlagged(){
+  setText('flagged-count', S.flagged.length+' flagged');
+  var body = document.getElementById('flagged-body');
+  body.innerHTML = S.flagged.length ? S.flagged.map(function(f){
+    return `<tr>
+      <td><div class="item-title-text">${esc(f.name||'—')}</div></td>
+      <td><span class="badge b-${f.type||'lost'}">${(f.type||'—').toUpperCase()}</span></td>
+      <td>${esc(f.reason||'—')}</td>
+      <td>${esc(f.flaggedBy||'Admin')}</td>
+      <td>${esc(f.date||'—')}</td>
+      <td><div class="act-row">
+        <button class="a-btn a-del" onclick="removeFlagged('${f.id}')">🗑 Remove Item</button>
+        <button class="a-btn a-restore" onclick="clearFlag('${f.id}')">✅ Clear Flag</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="6">No flagged items</td></tr>`;
+}
+
+function flagItem(itemId, type, name){
+  var reason = prompt('Reason for flagging "'+name+'" :');
+  if(!reason) return;
+  db.ref('flagged').push({itemId,type,name,reason,flaggedBy:'Admin',date:now()}).then(function(){
+    logAdminAction('🚩','Item flagged: '+name,'Reason: '+reason);
+    toast('🚩','Item flagged',name);
+  });
+}
+
+function removeFlagged(fid){
+  db.ref('flagged/'+fid).remove().then(function(){
+    toast('🗑️','Flagged entry removed','');
+  });
+}
+
+function clearFlag(fid){
+  db.ref('flagged/'+fid).remove().then(function(){
+    toast('✅','Flag cleared','Item is no longer flagged');
+  });
+}
+
+// ════════════════════════════════════════════
+// ANALYTICS
+// ════════════════════════════════════════════
+function renderAnalytics(){
+  var all    = [...S.lostItems,...S.foundItems];
+  var approved= S.allClaims.filter(c=>c.status==='approved').length;
+  var rejected= S.allClaims.filter(c=>c.status==='rejected').length;
+  var pending = S.allClaims.filter(c=>!c.status||c.status==='pending').length;
+
+  setText('an-total',    all.length);
+  setText('an-approved', approved);
+  setText('an-rejected', rejected);
+  setText('an-pending',  pending);
+
+  // Matches
+  var matches = S.lostItems.filter(l=>
+    S.foundItems.some(f=>f.name&&l.name&&(f.name.toLowerCase().includes(l.name.toLowerCase().substring(0,4))||l.name.toLowerCase().includes(f.name.toLowerCase().substring(0,4))))
+  ).length;
+  setText('an-matches', matches);
+
+  // Category chart
+  var cats = {};
+  all.forEach(function(i){ cats[i.category||'Other'] = (cats[i.category||'Other']||0)+1; });
+  var maxCat = Math.max(...Object.values(cats),1);
+  var colors = ['#3b82f6','#22c55e','#ef4444','#f59e0b','#a78bfa','#22d3ee'];
+  document.getElementById('cat-chart').innerHTML = Object.entries(cats).map(function([k,v],i){
+    return `<div class="chart-row">
+      <div class="chart-label">${k}</div>
+      <div class="chart-bar-wrap"><div class="chart-bar" style="width:${Math.round(v/maxCat*100)}%;background:${colors[i%colors.length]}"></div></div>
+      <div class="chart-num">${v}</div>
+    </div>`;
+  }).join('') || '<div style="padding:16px;color:var(--t3);font-size:12px">No data yet</div>';
+
+  // Status chart
+  var statusData = [['Approved',approved,'#22c55e'],['Rejected',rejected,'#ef4444'],['Pending',pending,'#f59e0b']];
+  var maxS = Math.max(approved,rejected,pending,1);
+  document.getElementById('status-chart').innerHTML = statusData.map(function([k,v,c]){
+    return `<div class="chart-row">
+      <div class="chart-label">${k}</div>
+      <div class="chart-bar-wrap"><div class="chart-bar" style="width:${Math.round(v/maxS*100)}%;background:${c}"></div></div>
+      <div class="chart-num">${v}</div>
+    </div>`;
+  }).join('');
+
+  // Top users
+  var userActivity = {};
+  [...S.lostItems,...S.foundItems].forEach(function(i){
+    var e=i.userEmail||i.contactPhone||'unknown';
+    if(!userActivity[e]) userActivity[e]={email:e,items:0,claims:0};
+    userActivity[e].items++;
+  });
+  S.allClaims.forEach(function(c){
+    var e=c.claimantEmail||c.userEmail||'unknown';
+    if(!userActivity[e]) userActivity[e]={email:e,items:0,claims:0};
+    userActivity[e].claims++;
+  });
+  var topUsers = Object.values(userActivity).sort((a,b)=>(b.items+b.claims)-(a.items+a.claims)).slice(0,8);
+  var tbody = document.getElementById('top-users-body');
+  tbody.innerHTML = topUsers.length ? topUsers.map(function(u){
+    var status = S.users[sanitizeKey(u.email)]?.status||'active';
+    var bdg = status==='banned'?'b-banned':status==='warned'?'b-warn':'b-active';
+    return `<tr>
+      <td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)">${u.email[0].toUpperCase()}</div><div class="u-name">${esc(u.email)}</div></div></td>
+      <td>${u.items}</td><td>${u.claims}</td>
+      <td><span class="badge ${bdg}">${status}</span></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="4">No data</td></tr>`;
+}
+
+// ════════════════════════════════════════════
+// CLAIM ACTIONS
+// ════════════════════════════════════════════
+function updateClaim(itemId,claimId,newStatus,email,name,phone,itemName,itemType){
+  db.ref('claims/'+itemId+'/'+claimId+'/status').set(newStatus).then(function(){
+    toast(newStatus==='approved'?'✅':'❌','Claim '+newStatus,name+' — '+itemName);
+    logAdminAction(newStatus==='approved'?'✅':'❌','Claim '+newStatus+': '+itemName,'Claimant: '+name);
+    autoSendEmail(email,name,phone,itemName,itemType,newStatus);
+  });
+}
+
+function deleteClaim(itemId,claimId){
+  confirmDo('🗑️','Delete this claim?','This claim record will be permanently removed.',function(){
+    db.ref('claims/'+itemId+'/'+claimId).remove().then(function(){
+      toast('🗑️','Claim deleted','');
+    });
+  });
+}
+
+// ════════════════════════════════════════════
+// ITEM ACTIONS
+// ════════════════════════════════════════════
+function deleteItem(type,id,name){
+  confirmDo('🗑️','Delete "'+name+'"?','This item and all its associated claims will be permanently removed.',function(){
+    var path = type==='lost'?'lostItems':'foundItems';
+    db.ref(path+'/'+id).remove().then(function(){
+      db.ref('claims/'+id).remove();
+      logAdminAction('🗑️','Item deleted: '+name,'Type: '+type);
+      toast('🗑️','Item deleted',name);
+    });
+  });
+}
+
+function confirmDeleteAll(type){
+  var labels = {lost:'ALL Lost Items',found:'ALL Found Items',claims:'ALL Claims',users:'ALL Users',all:'ENTIRE DATABASE'};
+  confirmDo('💥','Delete '+labels[type]+'?','⚠️ This is PERMANENT and cannot be undone. All data will be lost forever.',function(){
+    if(type==='lost')   db.ref('lostItems').remove();
+    if(type==='found')  db.ref('foundItems').remove();
+    if(type==='claims') db.ref('claims').remove();
+    if(type==='users')  db.ref('users').remove();
+    if(type==='all'){   db.ref('lostItems').remove(); db.ref('foundItems').remove(); db.ref('claims').remove(); db.ref('users').remove(); db.ref('flagged').remove(); }
+    logAdminAction('💥','Bulk delete: '+type,'Admin wiped '+type);
+    toast('🗑️','Deleted: '+labels[type],'');
+  });
+}
+
+// ════════════════════════════════════════════
+// USER ACTIONS
+// ════════════════════════════════════════════
+function openBanModal(email){
+  S.pendingBanEmail = email;
+  document.getElementById('ban-user-email').textContent = email;
+  document.getElementById('ban-reason').value = '';
+  openModal('ban-modal');
+}
+
+function confirmBan(){
+  var email  = S.pendingBanEmail;
+  var reason = document.getElementById('ban-reason').value.trim();
+  var notify = document.getElementById('ban-notify').checked;
+  if(!email) return;
+  var key = sanitizeKey(email);
+  var data = { email, name: email, status:'banned', reason: reason||'Violation of platform rules', bannedOn: now(), bannedBy:'Admin', joined: S.users[key]?.joined||'—' };
+  db.ref('users/'+key).set(data).then(function(){
+    closeModal('ban-modal');
+    logAdminAction('🚫','User banned: '+email,'Reason: '+reason);
+    toast('🚫','User banned',email);
+    if(notify) sendBanEmail(email, email, reason);
+  });
+}
+
+function unbanUser(email){
+  var key = sanitizeKey(email);
+  db.ref('users/'+key+'/status').set('active').then(function(){
+    db.ref('users/'+key+'/reason').remove();
+    logAdminAction('✅','User unbanned: '+email,'');
+    toast('✅','User unbanned',email);
+  });
+}
+
+function deleteUser(email){
+  confirmDo('🗑️','Remove user "'+email+'"?','This will remove their account record. Their items will remain.',function(){
+    var key = sanitizeKey(email);
+    db.ref('users/'+key).remove().then(function(){
+      delete S.users[key];
+      logAdminAction('🗑️','User removed: '+email,'');
+      toast('🗑️','User removed',email);
+      refreshAll();
+    });
+  });
+}
+
+function openWarnModal(email){
+  S.pendingWarnEmail = email;
+  document.getElementById('warn-user-email').textContent = email;
+  document.getElementById('warn-reason').value = '';
+  openModal('warn-modal');
+}
+
+function confirmWarn(){
+  var email  = S.pendingWarnEmail;
+  var reason = document.getElementById('warn-reason').value.trim();
+  var notify = document.getElementById('warn-notify').checked;
+  if(!email) return;
+  var key = sanitizeKey(email);
+  db.ref('users/'+key).update({ status:'warned', warnReason: reason, warnedOn: now() }).then(function(){
+    closeModal('warn-modal');
+    logAdminAction('⚠️','Warning sent to: '+email,'Reason: '+reason);
+    toast('⚠️','Warning sent',email);
+    if(notify) sendWarnEmail(email, email, reason);
+  });
+}
+
+// ════════════════════════════════════════════
+// EMAIL
+// ════════════════════════════════════════════
+function openEmailModal(itemId,email,name,phone,itemName,itemType){
+  var item    = findItem(itemId);
+  var ownerEmail = item ? (item.userEmail||item.contactPhone||'') : '';
+  var ownerName  = item ? (item.contactName||'Owner') : 'Owner';
+  S.pendingEmail = {email,name,phone,itemName,itemType,ownerEmail,ownerName};
+  document.getElementById('email-modal-body').innerHTML = `
+    <div class="m-row"><div class="m-label">To (Owner)</div><div class="m-val">${esc(ownerName)} &lt;${esc(ownerEmail)}&gt;</div></div>
+    <div class="m-row"><div class="m-label">Item</div><div class="m-val">${esc(itemName)} <span style="color:var(--t3)">(${itemType})</span></div></div>
+    <div class="m-row"><div class="m-label">Claimant</div><div class="m-val">${esc(name)}</div></div>
+    <div class="m-row"><div class="m-label">Phone</div><div class="m-val">${esc(phone)}</div></div>
+    <div class="m-row"><div class="m-label">Email</div><div class="m-val">${esc(email)}</div></div>
+    <div class="email-box">
+      <strong>Subject:</strong> 📦 Someone claimed your item — ${esc(itemName)}<br><br>
+      <strong>Hi ${esc(ownerName)},</strong><br>
+      A student has claimed your <em>${itemType}</em> item — <strong>${esc(itemName)}</strong>.<br><br>
+      <strong>Claimant:</strong> ${esc(name)}<br>
+      <strong>Phone:</strong> ${esc(phone)}<br>
+      <strong>Email:</strong> ${esc(email)}<br><br>
+      Please log in to review this claim.<br>— Campus ReShare Hub Admin
+    </div>`;
+  openModal('email-modal');
+}
+
+function openEmailModalUser(email,name){
+  S.pendingEmail = {email,name,isUser:true};
+  document.getElementById('email-modal-body').innerHTML = `
+    <div class="m-row"><div class="m-label">To</div><div class="m-val">${esc(name)} &lt;${esc(email)}&gt;</div></div>
+    <div class="m-row"><div class="m-label">Type</div><div class="m-val">Custom Admin Message</div></div>
+    <div style="margin-top:10px">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:5px">Message</label>
+      <textarea id="custom-email-body" style="width:100%;background:var(--s2);border:1.5px solid var(--border2);border-radius:var(--r2);color:var(--text);padding:10px 12px;font-size:13px;outline:none;resize:vertical;min-height:80px;" placeholder="Type your message to this user..."></textarea>
+    </div>`;
+  openModal('email-modal');
+}
+
+function confirmSendEmail(){
+  if(!S.pendingEmail) return;
+  var p = S.pendingEmail;
+  if(p.isUser){
+    var body = val('custom-email-body');
+    sendCustomEmail(p.email,p.name,body);
+  } else {
+    autoSendEmail(p.email,p.name,p.phone,p.itemName,p.itemType,'pending');
+  }
+  closeModal('email-modal');
+}
+
+function autoSendEmail(claimantEmail,claimantName,claimantPhone,itemName,itemType,status,ownerEmail,ownerName){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  if(!cfg.pub||!cfg.svc||!cfg.tpl){ toast('⚠️','EmailJS not set up','Go to Email Config tab'); return; }
+  try{ emailjs.init(cfg.pub); }catch(e){}
+
+  // ── Build unique message based on status ──
+  var note = '';
+  var recipient = claimantEmail;
+  var recipientName = claimantName;
+
+  if(status === 'approved'){
+    note = 'Great news! Your claim for the ' + itemType + ' item "' + itemName + '" has been APPROVED by the admin. '
+         + 'Please contact the item owner to arrange collection. '
+         + 'Owner contact: ' + (ownerName||'See platform') + '.';
+    recipient = claimantEmail;
+    recipientName = claimantName;
+  } else if(status === 'rejected'){
+    note = 'We regret to inform you that your claim for the ' + itemType + ' item "' + itemName + '" has been REJECTED by the admin. '
+         + 'If you believe this is a mistake, please contact the admin. '
+         + 'You can browse other items on Campus ReShare Hub.';
+    recipient = claimantEmail;
+    recipientName = claimantName;
+  } else if(status === 'pending'){
+    // Notify the OWNER that someone claimed their item
+    note = 'A student has claimed your ' + itemType + ' item "' + itemName + '" on Campus ReShare Hub. '
+         + 'Claimant: ' + claimantName + '. Phone: ' + claimantPhone + '. Email: ' + claimantEmail + '. '
+         + 'Please log in to the Admin Dashboard to approve or reject this claim.';
+    recipient = ownerEmail || claimantEmail;
+    recipientName = ownerName || claimantName;
+  } else {
+    note = 'Update regarding your item "' + itemName + '" on Campus ReShare Hub. Status: ' + status + '.';
+  }
+
+  // Get item image — find item to get non-base64 image URL
+  var itemImage = 'https://placehold.co/400x250/e0e7ff/4f46e5?text=' + encodeURIComponent(itemName);
+  var foundItem = [...S.lostItems,...S.foundItems].find(function(i){ return i.name===itemName; });
+  if(foundItem && foundItem.image && foundItem.image.length > 20 && !foundItem.image.startsWith('data:')){
+    itemImage = foundItem.image; // only use if it's a real URL not base64
+  }
+
+  emailjs.send(cfg.svc, cfg.tpl, {
+    to_email:       recipient,
+    to_name:        recipientName,
+    item_name:      itemName,
+    item_type:      itemType,
+    item_image:     itemImage,
+    claimant_name:  claimantName,
+    claimant_phone: claimantPhone,
+    claimant_email: claimantEmail,
+    claim_time:     now(),
+    status:         status,
+    reason:         '—',
+    admin_note:     note
+  })
+  .then(function(){ toast('📧','Email sent!', recipient); })
+  .catch(function(e){ toast('❌','Email failed', e.text||String(e)); });
+}
+
+function sendBanEmail(email,name,reason){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  if(!cfg.pub||!cfg.svc){ toast('⚠️','EmailJS not configured','Go to Email Config tab'); return; }
+  var tpl = cfg.tplBan || cfg.tpl;
+  if(!tpl){ toast('⚠️','No template ID','Configure Email Config'); return; }
+  try{ emailjs.init(cfg.pub); }catch(e){}
+  emailjs.send(cfg.svc, tpl, {
+    to_email:       email,
+    to_name:        name,
+    item_name:      'Account Suspended',
+    item_type:      'ban',
+    item_image:     'https://placehold.co/400x250/fef2f2/ef4444?text=Account+Suspended',
+    claimant_name:  'Admin',
+    claimant_phone: '—',
+    claimant_email: 'admin@aec.edu.in',
+    claim_time:     now(),
+    status:         '🚫 SUSPENDED',
+    reason:         reason || 'Violation of platform rules',
+    admin_note:     'Your Campus ReShare Hub account has been SUSPENDED. '
+                    + 'Reason: ' + (reason||'Violation of platform rules') + '. '
+                    + 'If you believe this is a mistake, contact the admin at admin@aec.edu.in with your roll number.'
+  })
+  .then(function(){ toast('📧','Ban notice sent',email); })
+  .catch(function(e){ toast('❌','Email failed',e.text||String(e)); });
+}
+
+function sendWarnEmail(email,name,reason){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  if(!cfg.pub||!cfg.svc){ toast('⚠️','EmailJS not configured','Go to Email Config tab'); return; }
+  var tpl = cfg.tplWarn || cfg.tpl;
+  if(!tpl){ toast('⚠️','No template ID','Configure Email Config'); return; }
+  try{ emailjs.init(cfg.pub); }catch(e){}
+  emailjs.send(cfg.svc, tpl, {
+    to_email:       email,
+    to_name:        name,
+    item_name:      'Official Warning',
+    item_type:      'warning',
+    item_image:     'https://placehold.co/400x250/fefce8/f59e0b?text=⚠️+Warning',
+    claimant_name:  'Admin',
+    claimant_phone: '—',
+    claimant_email: 'admin@aec.edu.in',
+    claim_time:     now(),
+    status:         '⚠️ WARNING',
+    reason:         reason,
+    admin_note:     'You have received an official WARNING on Campus ReShare Hub. '
+                    + 'Reason: ' + reason + '. '
+                    + 'Further violations may result in account suspension. '
+                    + 'Please follow platform guidelines to avoid further action.'
+  })
+  .then(function(){ toast('📧','Warning email sent',email); })
+  .catch(function(e){ toast('❌','Email failed',e.text||String(e)); });
+}
+
+function sendCustomEmail(email,name,body){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  if(!cfg.pub||!cfg.svc||!cfg.tpl){ toast('⚠️','EmailJS not set up',''); return; }
+  emailjs.init(cfg.pub);
+  emailjs.send(cfg.svc, cfg.tpl, {to_email:email,to_name:name,admin_note:body,item_name:'Admin Message',item_type:'notification',claim_time:now(),status:'info'})
+    .then(function(){ toast('📧','Email sent!',email); })
+    .catch(function(e){ toast('❌','Email failed',e.text||String(e)); });
+}
+
+function sendTestEmail(){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  var addr = val('ej-test-addr');
+  if(!addr){ toast('⚠️','Enter test email',''); return; }
+  if(!cfg.pub||!cfg.svc){ toast('⚠️','Save keys first',''); return; }
+  var tplKey = val('ej-test-tpl');
+  var tpl = tplKey==='ban'?cfg.tplBan:tplKey==='warn'?cfg.tplWarn:cfg.tpl;
+  if(!tpl){ toast('⚠️','Template ID missing','Check Email Config tab'); return; }
+  emailjs.init(cfg.pub);
+  emailjs.send(cfg.svc,tpl,{to_email:addr,to_name:'Test User',item_name:'Test Backpack',item_type:'lost',claimant_name:'Test Student',claimant_phone:'9999999999',claimant_email:addr,claim_time:now(),status:'pending',reason:'Test reason',admin_note:'This is a test email from Campus ReShare Hub Admin Panel.'})
+    .then(function(){ toast('📧','Test email sent!',addr); })
+    .catch(function(e){ toast('❌','Test failed',e.text||String(e)); });
+}
+
+// ════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════
+function exportData(key){
+  db.ref(key).once('value').then(function(snap){
+    var raw = snap.val()||{};
+    var rows = Object.keys(raw).map(function(k){ var r=Object.assign({},raw[k]); r._id=k; return r; });
+
+    // Load jsPDF dynamically if not already loaded
+    function doExport(){
+      var { jsPDF } = window.jspdf;
+      var doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+
+      // ── Label maps for each collection ──
+      var colMap = {
+        lostItems:  ['Name','Category','Location','Date','Contact Name','Phone','Flagged'],
+        foundItems: ['Name','Category','Location','Date','Contact Name','Phone','Flagged'],
+        claims:     ['Claimant Name','Email','Phone','Status','Time'],
+        users:      ['Name','Email','Phone','Role','Joined']
+      };
+      var fieldMap = {
+        lostItems:  ['name','category','location','date','contactName','contactPhone','flagged'],
+        foundItems: ['name','category','location','date','contactName','contactPhone','flagged'],
+        claims:     ['claimantName','claimantEmail','claimantPhone','status','time'],
+        users:      ['name','email','phone','role','joined']
+      };
+
+      var cols   = colMap[key]   || Object.keys(rows[0]||{}).filter(function(k){return k!=='image'&&k!=='imageBase64'&&k!=='_id';});
+      var fields = fieldMap[key] || cols;
+
+      var pageW = doc.internal.pageSize.getWidth();
+      var pageH = doc.internal.pageSize.getHeight();
+      var margin = 36;
+      var colW = (pageW - margin*2) / cols.length;
+
+      // ── Header block ──
+      doc.setFillColor(14,18,25);
+      doc.rect(0,0,pageW,54,'F');
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(16);
+      doc.setTextColor(241,245,249);
+      doc.text('Campus ReShare Hub — '+key.replace(/([A-Z])/g,' $1').trim()+' Report', margin, 34);
+
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148,163,184);
+      doc.text('Generated: '+new Date().toLocaleString()+'   |   Total Records: '+rows.length, margin, 46);
+
+      // ── Table header ──
+      var yHead = 70;
+      doc.setFillColor(28,37,53);
+      doc.rect(margin, yHead-14, pageW-margin*2, 20, 'F');
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(148,163,184);
+      cols.forEach(function(col,i){
+        doc.text(col.toUpperCase(), margin + i*colW + 4, yHead);
+      });
+
+      // ── Rows ──
+      var y = yHead + 16;
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+
+      rows.forEach(function(row, ri){
+        if(y > pageH - 50){
+          doc.addPage();
+          y = 50;
+          // Repeat header on new page
+          doc.setFillColor(28,37,53);
+          doc.rect(margin, y-14, pageW-margin*2, 20,'F');
+          doc.setFont('helvetica','bold');
+          doc.setFontSize(8);
+          doc.setTextColor(148,163,184);
+          cols.forEach(function(col,i){ doc.text(col.toUpperCase(), margin+i*colW+4, y); });
+          y += 16;
+          doc.setFont('helvetica','normal');
+          doc.setFontSize(8.5);
+        }
+
+        // Alternating row bg
+        if(ri % 2 === 0){
+          doc.setFillColor(20,27,38);
+          doc.rect(margin, y-12, pageW-margin*2, 18,'F');
+        }
+
+        doc.setTextColor(203,213,225);
+        fields.forEach(function(f,i){
+          var val = row[f];
+          if(val === undefined || val === null) val = '—';
+          if(typeof val === 'boolean') val = val ? 'Yes' : 'No';
+          var str = String(val);
+          // Truncate long strings
+          if(str.length > 28) str = str.substring(0,26)+'…';
+          doc.text(str, margin + i*colW + 4, y);
+        });
+        y += 18;
+      });
+
+      // ── Footer ──
+      var totalPages = doc.internal.getNumberOfPages();
+      for(var p=1; p<=totalPages; p++){
+        doc.setPage(p);
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71,85,105);
+        doc.text('Campus ReShare Hub — Confidential', margin, pageH-14);
+        doc.text('Page '+p+' of '+totalPages, pageW-margin, pageH-14, {align:'right'});
+      }
+
+      var fname = 'reshare-'+key+'-'+Date.now()+'.pdf';
+      doc.save(fname);
+      toast('📄','PDF ready', fname+' downloaded');
+    }
+
+    if(window.jspdf){
+      doExport();
+    } else {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = doExport;
+      document.head.appendChild(s);
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════
+function saveEmailConfig(){
+  var cfg = {
+    pub:     val('ej-pub'),
+    svc:     val('ej-svc'),
+    tpl:     val('ej-tpl'),
+    tplBan:  val('ej-tpl-ban'),
+    tplWarn: val('ej-tpl-warn')
+  };
+  localStorage.setItem('ejsCfg', JSON.stringify(cfg));
+  if(cfg.pub) emailjs.init(cfg.pub);
+  toast('✅','Email config saved','Keys stored locally');
+}
+
+function loadEmailConfigUI(){
+  var cfg = JSON.parse(localStorage.getItem('ejsCfg')||'{}');
+  if(cfg.pub)     document.getElementById('ej-pub').value     = cfg.pub;
+  if(cfg.svc)     document.getElementById('ej-svc').value     = cfg.svc;
+  if(cfg.tpl)     document.getElementById('ej-tpl').value     = cfg.tpl;
+  if(cfg.tplBan)  document.getElementById('ej-tpl-ban').value = cfg.tplBan;
+  if(cfg.tplWarn) document.getElementById('ej-tpl-warn').value= cfg.tplWarn;
+}
+
+function saveAdminCreds(){
+  var email = val('cfg-admin-email');
+  var pass  = val('cfg-admin-pass');
+  if(email) localStorage.setItem('adminEmail',email);
+  if(pass)  localStorage.setItem('adminPass',pass);
+  toast('✅','Credentials saved','Stored securely');
+}
+
+function savePlatformSettings(){
+  var cfg = { name:val('cfg-platform-name'), domain:val('cfg-domain'), maxItems:val('cfg-max-items') };
+  localStorage.setItem('platformCfg',JSON.stringify(cfg));
+  toast('✅','Platform settings saved','');
+}
+
+function loadPlatformSettings(){
+  var cfg = JSON.parse(localStorage.getItem('platformCfg')||'{}');
+  if(cfg.name)     document.getElementById('cfg-platform-name').value = cfg.name;
+  if(cfg.domain)   document.getElementById('cfg-domain').value        = cfg.domain;
+  if(cfg.maxItems) document.getElementById('cfg-max-items').value     = cfg.maxItems;
+  var ae = localStorage.getItem('adminEmail');
+  if(ae) document.getElementById('cfg-admin-email').value = ae;
+}
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+var pageInfo = {
+  overview:    ['Overview',        'Campus ReShare Hub — Admin Control Panel'],
+  analytics:   ['Analytics',       'Data insights and platform statistics'],
+  lost:        ['Lost Items',      'Manage all reported lost items'],
+  found:       ['Found Items',     'Manage all reported found items'],
+  claims:      ['Claims Manager',  'Review, approve or reject item claims'],
+  marketplace: ['Marketplace',     'Manage all campus buy & sell listings'],
+  users:       ['User Management', 'Manage student accounts and access'],
+  banned:      ['Banned Users',    'View and manage restricted accounts'],
+  activity:    ['Activity Log',    'Full history of all platform events'],
+  reports:     ['Flagged Items',   'Review items flagged for review'],
+  settings:    ['Settings',        'Admin credentials and platform configuration'],
+  emailcfg:    ['Email Config',    'Configure EmailJS notifications']
+};
+
+function nav(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  var pg = document.getElementById('pg-'+id);
+  if(pg) pg.classList.add('active');
+  if(btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+      if((b.getAttribute('onclick')||'').includes("'"+id+"'")) b.classList.add('active');
+    });
+  }
+  var info = pageInfo[id]||[id,''];
+  setText('page-title', info[0]);
+  setText('page-sub',   info[1]);
+}
+
+// ════════════════════════════════════════════
+// GLOBAL SEARCH
+// ════════════════════════════════════════════
+function globalSearch(q){
+  if(!q) return;
+  q = q.toLowerCase();
+  var inItems = [...S.lostItems,...S.foundItems].some(i=>(i.name||'').toLowerCase().includes(q));
+  var inUsers = Object.values(S.users).some(u=>(u.email||'').toLowerCase().includes(q));
+  var inClaims= S.allClaims.some(c=>(c.claimantName||'').toLowerCase().includes(q));
+  if(inUsers){ nav('users',null); document.getElementById('users-search').value=q; filterUsers(); }
+  else if(inItems){ nav('lost',null); document.getElementById('lost-search').value=q; filterItems('lost'); }
+  else if(inClaims){ nav('claims',null); document.getElementById('claims-search').value=q; filterClaims(); }
+}
+
+// ════════════════════════════════════════════
+// CONFIRM DIALOG
+// ════════════════════════════════════════════
+function confirmDo(icon,title,msg,fn){
+  S.pendingConfirm = fn;
+  setText('confirm-icon',  icon);
+  setText('confirm-title', title);
+  setText('confirm-msg',   msg);
+  document.getElementById('confirm-bg').classList.add('open');
+}
+function confirmAction(){
+  if(S.pendingConfirm){ S.pendingConfirm(); S.pendingConfirm=null; }
+  closeConfirm();
+}
+function closeConfirm(){ document.getElementById('confirm-bg').classList.remove('open'); }
+
+// ════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+document.querySelectorAll('.modal-bg').forEach(function(m){
+  m.addEventListener('click',function(e){ if(e.target===m) closeModal(m.id); });
+});
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+var toastT=null;
+function toast(icon,text,sub){
+  setText('toast-icon',icon); setText('toast-text',text); setText('toast-sub',sub||'');
+  var el=document.getElementById('toast');
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){ el.classList.remove('show'); },3200);
+}
+
+// ════════════════════════════════════════════
+// ADMIN LOG
+// ════════════════════════════════════════════
+function logAdminAction(ico,title,sub){
+  var log = JSON.parse(localStorage.getItem('adminLog')||'[]');
+  log.unshift({ico,title,sub,time:now(),cls:'bl',type:'admin'});
+  if(log.length>100) log=log.slice(0,100);
+  localStorage.setItem('adminLog',JSON.stringify(log));
+}
+
+// ════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════
+function findItem(id){ return [...S.lostItems,...S.foundItems].find(i=>i.id===id)||null; }
+function sanitizeKey(s){ return (s||'').replace(/[.#$\[\]@]/g,'_'); }
+function now(){ return new Date().toLocaleString(); }
+function val(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+function setText(id,t){ var el=document.getElementById(id); if(el) el.textContent=t; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function doLogout(){ localStorage.removeItem('user'); window.location.href='login.html'; }
+
+// ════════════════════════════════════════════
+// MARKETPLACE
+// ════════════════════════════════════════════
+S.marketItems = [];
+S.mkView = 'table';
+
+function listenMarketplace(){
+  db.ref('marketplaceItems').on('value', function(snap){
+    S.marketItems = [];
+    snap.forEach(function(c){ var d=c.val(); d._id=c.key; S.marketItems.push(d); });
+    renderMarketplaceTable();
+    updateMarketStats();
+    updateMarketSidebarCount();
+  });
+}
+
+function updateMarketStats(){
+  var total     = S.marketItems.length;
+  var available = S.marketItems.filter(function(i){ return (i.status||'available')==='available'&&!i.flagged; }).length;
+  var sold      = S.marketItems.filter(function(i){ return i.status==='sold'; }).length;
+  var flagged   = S.marketItems.filter(function(i){ return i.flagged; }).length;
+  setText('mk-total',       total);
+  setText('mk-available',   available);
+  setText('mk-sold',        sold);
+  setText('mk-flagged-stat',flagged);
+}
+
+function updateMarketSidebarCount(){
+  setText('sb-market', S.marketItems.length);
+}
+
+function renderMarketplaceTable(){
+  var search = val('mk-search').toLowerCase();
+  var cat    = val('mk-cat');
+  var status = val('mk-status-filter');
+  var sort   = val('mk-sort')||'newest';
+
+  var list = S.marketItems.filter(function(i){
+    var ms = (i.status||'available');
+    var matchSearch = !search ||(i.name||'').toLowerCase().includes(search)||(i.seller||'').toLowerCase().includes(search)||String(i.price||'').includes(search);
+    var matchCat    = !cat    || i.category===cat;
+    var matchStatus = !status ||
+      (status==='flagged'   ? i.flagged :
+       status==='available' ? (ms==='available'&&!i.flagged) :
+       ms===status);
+    return matchSearch && matchCat && matchStatus;
+  });
+
+  list = list.slice().sort(function(a,b){
+    if(sort==='oldest')     return (a.timestamp||0)-(b.timestamp||0);
+    if(sort==='price-asc')  return (a.price||0)-(b.price||0);
+    if(sort==='price-desc') return (b.price||0)-(a.price||0);
+    return (b.timestamp||0)-(a.timestamp||0);
+  });
+
+  setText('mk-count', list.length+' listing'+(list.length!==1?'s':''));
+
+  var body=document.getElementById('mk-body');
+  body.innerHTML = list.length ? list.map(mkTableRow).join('') : '<tr class="empty-row"><td colspan="9">🛒 No listings found</td></tr>';
+
+  var cards=document.getElementById('mk-cards');
+  if(cards) cards.innerHTML = list.length ? list.map(mkCardHtml).join('') : '<p style="color:var(--t3);grid-column:1/-1;text-align:center;padding:40px">🛒 No listings found</p>';
+}
+
+function mkStatusBadge(item){
+  if(item.flagged)                      return '<span class="badge b-warn">🚩 Flagged</span>';
+  if((item.status||'available')==='sold') return '<span class="badge b-rejected">Sold</span>';
+  return '<span class="badge b-active">Available</span>';
+}
+
+function mkStatusToggleBtn(item){
+  var sold=(item.status||'available')==='sold';
+  if(sold) return '<button class="a-btn a-restore" onclick="setMkStatus(\''+item._id+'\',\'available\')">↩ Relist</button>';
+  return '<button class="a-btn a-approve" onclick="setMkStatus(\''+item._id+'\',\'sold\')">🤝 Sold</button>';
+}
+
+function mkTableRow(item){
+  var img=(item.imageBase64&&item.imageBase64.length>20)
+    ?'<img src="'+item.imageBase64+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML=\'🛒\'">'
+    :'🛒';
+  var posted=item.timestamp?new Date(item.timestamp).toLocaleDateString():'—';
+  var condColor={'New':'var(--green)','Like New':'var(--blue)','Good':'var(--cyan)','Fair':'var(--yellow)','Poor':'var(--red)'}[item.condition]||'var(--t2)';
+  return '<tr'+( item.flagged?' style="border-left:2px solid var(--yellow)"':'')+'>'+
+    '<td><div class="item-cell"><div class="item-thumb">'+img+'</div><div>'+
+      '<div class="item-title-text">'+esc(item.name||'Untitled')+'</div>'+
+      '<div class="item-meta-text">ID: '+String(item._id||'').substring(0,8)+'…</div>'+
+    '</div></div></td>'+
+    '<td>'+esc(item.category||'—')+'</td>'+
+    '<td><strong style="color:var(--green);font-family:\'Calibri\',sans-serif">₹'+Number(item.price||0).toLocaleString('en-IN')+'</strong></td>'+
+    '<td><span style="color:'+condColor+';font-size:11px;font-weight:700">'+esc(item.condition||'—')+'</span></td>'+
+    '<td><div class="user-cell"><div class="u-av" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);width:26px;height:26px;font-size:10px">'+
+      (item.seller||'?')[0].toUpperCase()+
+    '</div><div class="u-name" style="font-size:12px">'+esc(item.seller||'—')+'</div></div></td>'+
+    '<td>'+esc(item.phone||'—')+'</td>'+
+    '<td>'+esc(posted)+'</td>'+
+    '<td>'+mkStatusBadge(item)+'</td>'+
+    '<td><div class="act-row">'+
+      '<button class="a-btn a-view"  onclick="openMkDetail(\''+item._id+'\')">👁 View</button>'+
+      mkStatusToggleBtn(item)+
+      '<button class="a-btn a-warn"  onclick="flagMarketItem(\''+item._id+'\',\''+esc(item.name||'')+'\')">'+( item.flagged?'✅ Unflag':'🚩 Flag')+'</button>'+
+      '<button class="a-btn a-del"   onclick="deleteMkItem(\''+item._id+'\',\''+esc(item.name||'')+'\')">🗑</button>'+
+    '</div></td>'+
+  '</tr>';
+}
+
+function mkCardHtml(item){
+  var img=(item.imageBase64&&item.imageBase64.length>20)?'url("'+item.imageBase64+'")':'none';
+  var sold=(item.status||'available')==='sold';
+  var fl=item.flagged;
+  var ribbon=fl
+    ?'<div style="position:absolute;top:10px;left:10px;background:var(--yellow);color:#000;font-size:9px;font-weight:800;padding:2px 9px;border-radius:20px">🚩 FLAGGED</div>'
+    :sold
+    ?'<div style="position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:2px 9px;border-radius:20px">SOLD</div>':
+    '';
+  var posted=item.timestamp?new Date(item.timestamp).toLocaleDateString():'—';
+  return '<div style="background:var(--s1);border:1px solid '+(fl?'rgba(245,158,11,.4)':'var(--border)')+';border-radius:var(--r);overflow:hidden;transition:all var(--tr);">'+
+    '<div style="position:relative;height:130px;background:var(--s3) '+img+' center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">'+
+      (img==='none'?'🛒':'')+ribbon+
+    '</div>'+
+    '<div style="padding:12px;">'+
+      '<div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(item.name||'Untitled')+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'+
+        '<strong style="color:var(--green);font-family:\'Calibri\',sans-serif;font-size:15px;">₹'+Number(item.price||0).toLocaleString('en-IN')+'</strong>'+
+        '<span style="font-size:10px;color:var(--t3)">'+esc(item.category||'—')+'</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--t3);margin-bottom:10px">👤 '+esc(item.seller||'—')+' · 📅 '+esc(posted)+'</div>'+
+      '<div style="display:flex;gap:5px;">'+
+        '<button class="a-btn a-view" style="flex:1" onclick="openMkDetail(\''+item._id+'\')">👁 View</button>'+
+        '<button class="a-btn a-warn" onclick="flagMarketItem(\''+item._id+'\',\''+esc(item.name||'')+'\')">'+(fl?'✅':'🚩')+'</button>'+
+        '<button class="a-btn a-del"  onclick="deleteMkItem(\''+item._id+'\',\''+esc(item.name||'')+'\')">🗑</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function openMkDetail(id){
+  var item=S.marketItems.find(function(i){return i._id===id;});
+  if(!item) return;
+  var img=(item.imageBase64&&item.imageBase64.length>20)
+    ?'<img src="'+item.imageBase64+'" style="width:100%;height:220px;object-fit:cover;border-radius:var(--r2);margin-bottom:14px;">'
+    :'<div style="width:100%;height:100px;background:var(--s3);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:14px;">🛒</div>';
+  var posted=item.timestamp?new Date(item.timestamp).toLocaleString():'—';
+  var sold=(item.status||'available')==='sold';
+  var rows=[
+    ['💰 Price','₹'+Number(item.price||0).toLocaleString('en-IN')],
+    ['📂 Category',item.category||'—'],
+    ['🏷 Condition',item.condition||'—'],
+    ['📝 Description',item.description||'No description'],
+    ['👤 Seller',item.seller||'—'],
+    ['📞 Phone',item.phone||'—'],
+    ['📧 Listed By',item.postedBy||'—'],
+    ['📅 Posted',posted],
+    ['🔖 Status',sold?'Sold':(item.flagged?'🚩 Flagged':'Available')],
+    ['🆔 ID',item._id||'—']
+  ];
+  document.getElementById('mk-modal-body').innerHTML=img+rows.map(function(r){
+    return '<div class="m-row"><div class="m-label" style="width:110px">'+r[0]+'</div><div class="m-val">'+esc(String(r[1]))+'</div></div>';
+  }).join('');
+  document.getElementById('mk-modal-foot').innerHTML=
+    '<button class="m-btn m-btn-ghost" onclick="closeModal(\'mk-modal\')">Close</button>'+
+    (sold
+      ?'<button class="m-btn" style="background:var(--blue);color:#fff" onclick="setMkStatus(\''+item._id+'\',\'available\');closeModal(\'mk-modal\')">↩ Relist</button>'
+      :'<button class="m-btn m-btn-primary" onclick="setMkStatus(\''+item._id+'\',\'sold\');closeModal(\'mk-modal\')">🤝 Mark Sold</button>')+
+    '<button class="m-btn m-btn-red" onclick="deleteMkItem(\''+item._id+'\',\''+esc(item.name||'')+'\');closeModal(\'mk-modal\')">🗑 Delete</button>';
+  openModal('mk-modal');
+}
+
+function setMkStatus(id,status){
+  db.ref('marketplaceItems/'+id).update({status:status},function(err){
+    if(err){toast('❌','Status update failed',err.message);return;}
+    toast(status==='sold'?'🤝':'✅',status==='sold'?'Marked as sold':'Relisted','');
+    logAdminAction('🛒','Market status → '+status,id);
+  });
+}
+
+function flagMarketItem(id,name){
+  var item=S.marketItems.find(function(i){return i._id===id;});
+  if(!item) return;
+  if(item.flagged){
+    db.ref('marketplaceItems/'+id).update({flagged:false,flagReason:null},function(err){
+      if(err){toast('❌','Unflag failed',err.message);return;}
+      toast('✅','Listing unflagged',esc(name));
+      logAdminAction('✅','Market listing unflagged',name);
+    });
+  } else {
+    var reason=prompt('Reason for flagging "'+name+'":');
+    if(reason===null) return;
+    db.ref('marketplaceItems/'+id).update({flagged:true,flagReason:reason||'Under review'},function(err){
+      if(err){toast('❌','Flag failed',err.message);return;}
+      toast('🚩','Listing flagged',esc(name));
+      logAdminAction('🚩','Market listing flagged',name+' — '+reason);
+    });
+  }
+}
+
+function deleteMkItem(id,name){
+  confirmDo('🗑','Delete Listing?','This will permanently delete "'+name+'" from the marketplace.',function(){
+    db.ref('marketplaceItems/'+id).remove(function(err){
+      if(err){toast('❌','Delete failed',err.message);return;}
+      toast('🗑','Listing deleted',esc(name));
+      logAdminAction('🗑','Market listing deleted',name);
+    });
+  });
+}
+
+function confirmDeleteAllMarket(){
+  confirmDo('💥','Delete ALL Marketplace Listings?','This will permanently wipe ALL listings. Cannot be undone.',function(){
+    db.ref('marketplaceItems').remove(function(err){
+      if(err){toast('❌','Failed',err.message);return;}
+      toast('🗑','All marketplace listings deleted','');
+      logAdminAction('💥','All market listings wiped','');
+    });
+  });
+}
+
+function toggleMkView(){
+  S.mkView=S.mkView==='table'?'card':'table';
+  document.getElementById('mk-table-wrap').style.display=S.mkView==='table'?'':'none';
+  document.getElementById('mk-card-wrap').style.display =S.mkView==='card' ?'':'none';
+  document.getElementById('mk-view-ico').textContent=S.mkView==='table'?'⊞':'☰';
+  var btn=document.getElementById('mk-view-btn');
+  btn.innerHTML='<span id="mk-view-ico">'+(S.mkView==='table'?'⊞':'☰')+'</span>&nbsp;'+(S.mkView==='table'?'Card View':'Table View');
+}
+
+// ESC closes modals
+document.querySelectorAll('.modal-bg').forEach(function(m){
+  m.addEventListener('click',function(e){ if(e.target===m) closeModal(m.id); });
+});
+</script>
+<script>
+// ── Admin Theme Toggle ──
+(function(){
+  var saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('adminThemeBtn');
+  if(btn){ var ico = document.getElementById('adminThemeIco'); if(ico) ico.textContent = saved==='dark'?'☀️':'🌙'; }
+})();
+function toggleAdminTheme(){
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme')==='dark';
+  var next = isDark?'light':'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  var ico = document.getElementById('adminThemeIco');
+  if(ico) ico.textContent = next==='dark'?'☀️':'🌙';
+}
+</script>
+</body>
+</html>

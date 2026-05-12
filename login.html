@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ReShare Hub — Login</title>
+  <script>(function(){ var t=localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme',t); })();</script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b0e17;
+      --surface: #111827;
+      --card: #141b2d;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #6ee7b7;
+      --accent2: #3b82f6;
+      --gold: #f59e0b;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --error: #f87171;
+      --purple: #8b5cf6;
+      --purple-hi: #a78bfa;
+      --purple-lo: rgba(139,92,246,0.12);
+    }
+
+    [data-theme="light"] {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --accent: #059669;
+      --accent2: #2563eb;
+      --gold: #d97706;
+      --text: #0f172a;
+      --muted: #64748b;
+      --error: #dc2626;
+      --purple: #7c3aed;
+      --purple-hi: #8b5cf6;
+      --purple-lo: rgba(124,58,237,0.08);
+    }
+
+    [data-theme="light"] body {
+      background: var(--bg);
+    }
+
+    [data-theme="light"] .bg-layer {
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139,92,246,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 10% 80%, rgba(5,150,105,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(139,92,246,0.03) 0%, transparent 70%);
+    }
+
+    [data-theme="light"] .grid-lines {
+      background-image:
+        linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+    }
+
+    [data-theme="light"] .orb-1 { background: rgba(139,92,246,0.10); }
+    [data-theme="light"] .orb-2 { background: rgba(5,150,105,0.08); }
+    [data-theme="light"] .orb-3 { background: rgba(124,58,237,0.07); }
+
+    [data-theme="light"] .wrapper {
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+
+    [data-theme="light"] .form-panel {
+      background: #ffffff;
+    }
+
+    [data-theme="light"] .input-wrap {
+      background: #f8fafc;
+      border-color: rgba(0,0,0,0.10);
+    }
+
+    [data-theme="light"] .input-wrap:focus-within {
+      border-color: rgba(5,150,105,0.5);
+      box-shadow: 0 0 0 3px rgba(5,150,105,0.08);
+    }
+
+    [data-theme="light"] .input-wrap input {
+      color: #0f172a;
+    }
+
+    [data-theme="light"] .eye-btn {
+      color: #475569;
+    }
+
+    [data-theme="light"] .hero-panel {
+      background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    [data-theme="light"] .theme-toggle-btn {
+      background: rgba(124,58,237,0.08);
+      border-color: rgba(0,0,0,0.10);
+      color: #7c3aed;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      transition: background 0.45s, color 0.45s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Animated background ── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139,92,246,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 10% 80%, rgba(16,217,168,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%);
+    }
+
+    .grid-lines {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+
+    /* ── Floating orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      animation: drift 10s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      width: 300px;
+      height: 300px;
+      background: rgba(139,92,246,0.18);
+      top: -80px;
+      right: 10%;
+      animation-duration: 12s;
+    }
+
+    .orb-2 {
+      width: 200px;
+      height: 200px;
+      background: rgba(16,217,168,0.1);
+      bottom: 5%;
+      left: 5%;
+      animation-duration: 8s;
+      animation-delay: -4s;
+    }
+
+    .orb-3 {
+      width: 150px;
+      height: 150px;
+      background: rgba(167,139,250,0.1);
+      top: 40%;
+      left: 40%;
+      animation-duration: 15s;
+      animation-delay: -7s;
+    }
+
+    @keyframes drift {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        transform: translate(30px, 20px) scale(1.1);
+      }
+    }
+
+    /* ── Wrapper ── */
+    .wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      width: min(960px, 95vw);
+      min-height: 580px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+      animation: slideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── Left: Form Panel ── */
+    .form-panel {
+      flex: 1;
+      background: var(--card);
+      padding: 52px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 42px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--purple), var(--purple-hi));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand-name {
+      font-family: 'Calibri', Georgia, serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .form-heading {
+      font-family: 'Calibri', Georgia, serif;
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .form-heading span {
+      background: linear-gradient(135deg, var(--purple-hi) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .form-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      font-weight: 400;
+    }
+
+    /* ── Field ── */
+    .field {
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 14px;
+      gap: 10px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: rgba(110, 231, 183, 0.4);
+      box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.07);
+    }
+
+    .input-wrap .icon {
+      font-size: 15px;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .input-wrap input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      padding: 14px 0;
+      font-weight: 400;
+    }
+
+    .input-wrap input::placeholder {
+      color: var(--muted);
+    }
+
+    .eye-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #ffffff;
+      opacity: 1;
+      transition: transform0.2s, opacity 0.15s;
+      padding: 0;
+      line-height: 1;
+      dispaly: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .eye-btn:hover {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+
+    /* ── Row ── */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .remember input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+
+    /* ── Error ── */
+    .error-msg {
+      font-size: 13px;
+      color: var(--error);
+      min-height: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Login Button ── */
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+      color: #0b0e17;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-login:hover::after {
+      opacity: 0.07;
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
+
+    /* ── Right: Hero Panel ── */
+    .hero-panel {
+      width: 380px;
+      background: linear-gradient(160deg, #0f172a 0%, #111827 100%);
+      padding: 52px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      border-left: 1px solid var(--border);
+    }
+
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -60px;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+    }
+
+    .hero-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -40px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(110, 231, 183, 0.12) 0%, transparent 70%);
+    }
+
+    .campus-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(110, 231, 183, 0.1);
+      border: 1px solid rgba(110, 231, 183, 0.2);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      width: fit-content;
+      position: relative;
+      z-index: 1;
+    }
+
+    .campus-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+      }
+    }
+
+    .hero-title {
+      font-family: 'Calibri', Georgia, serif;
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      position: relative;
+      z-index: 1;
+      margin: 0;
+    }
+
+    .hero-title em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--gold), #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stats {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .stat-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .si-1 {
+      background: rgba(139,92,246,0.18);
+    }
+
+    .si-2 {
+      background: rgba(16,217,168,0.1);
+    }
+
+    .si-3 {
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* RESPONSIVE LOGIN */
+   @media (max-width: 480px) {
+  .login-card {
+    width: 95%;
+    padding: 2rem 1.5rem;
+    margin: 10px;
+  }
+  .header h1 { font-size: 1.75rem; }
+}
+  
+    /* Theme toggle */
+    .theme-toggle-btn {
+      position: fixed; top: 16px; right: 20px; z-index: 200;
+      background: var(--purple-lo); border: 1px solid var(--border);
+      color: var(--purple-hi); border-radius: 50%;
+      width: 38px; height: 38px; font-size: 17px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .theme-toggle-btn:hover { background: rgba(139,92,246,0.25); transform: rotate(20deg) scale(1.1); }
+</style>
+</head>
+
+<body>
+<button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">🌙</button>
+
+  <div class="bg-layer"></div>
+  <div class="grid-lines"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="wrapper">
+
+    <!-- LEFT: Login Form -->
+    <div class="form-panel">
+
+      <div class="brand" style="cursor:pointer;" onclick="window.location.href='signin.html'" title="Back to role selection">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name">Campus ReShare Hub</span>
+      </div>
+
+      <a href="signin.html" style="
+        display:inline-flex; align-items:center; gap:6px;
+        font-family:'DM Sans',sans-serif; font-size:12.5px; font-weight:600;
+        color:#64748b; text-decoration:none;
+        background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+        padding:6px 13px; border-radius:50px;
+        margin-bottom:24px;
+        transition:all 0.2s; width:fit-content;
+      " onmouseover="this.style.color='#f1f5f9';this.style.borderColor='rgba(255,255,255,0.2)'"
+         onmouseout="this.style.color='#64748b';this.style.borderColor='rgba(255,255,255,0.08)'">
+        ← Back to Home
+      </a>
+
+      <div class="form-heading">
+        Welcome<br>back, <span>Admin
+        </span>
+      </div>
+      <p class="form-sub">Sign in with your college email to continue</p>
+
+      <div class="field">
+        <label>College Email</label>
+        <div class="input-wrap">
+          <span class="icon">✉️</span>
+          <input type="email" id="email" placeholder="yourname@aec.edu.in" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="icon">🔒</span>
+          <input type="password" id="pwd" placeholder="Enter your password" autocomplete="current-password">
+          <button class="eye-btn" onclick="togglePwd()" type="button">👁</button>
+        </div>
+      </div>
+
+      
+
+      <div class="error-msg" id="loginError"></div>
+
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+
+    </div>
+
+    <!-- RIGHT: Hero Panel -->
+    <div class="hero-panel">
+      <div class="campus-badge">Administrative Portal</div>
+
+      <div>
+        <h2 class="hero-title">Manage.<br><em>Oversee.</em><br>Secure.</h2>
+        <p class="hero-sub" style="margin-top:16px">Access the central command for ReShare Hub. Monitor campus activity,
+          manage listings, and resolve reports.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-icon si-1">📊</div>
+          <div>
+            <div class="stat-label">System Analytics</div>
+            <div class="stat-desc">Monitor platform growth and usage</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon si-2">🛡️</div>
+          <div>
+            <div class="stat-label">Moderation Tools</div>
+            <div class="stat-desc">Review items and user reports</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon si-3">⚙️</div>
+          <div>
+            <div class="stat-label">Site Control</div>
+            <div class="stat-desc">Configure campus-wide settings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function togglePwd() {
+      var p = document.getElementById("pwd");
+      p.type = p.type === "password" ? "text" : "password";
+    }
+
+    function doLogin() {
+      var email = document.getElementById("email").value.trim().toLowerCase();
+      var pwd = document.getElementById("pwd").value.trim();
+      var err = document.getElementById("loginError");
+      err.innerHTML = "";
+
+      if (!email || !pwd) {
+        err.innerHTML = "⚠️ Please fill all fields.";
+        return;
+      }
+
+      var allowedDomains = ["@aec.edu.in", "@acet.edu.in", "@acoe.edu.in"];
+      if (!allowedDomains.some(function (d) { return email.endsWith(d); })) {
+        err.innerHTML = "⚠️ Use your college email only!";
+        return;
+      }
+
+      if (pwd.length < 4) {
+        err.innerHTML = "⚠️ Password too short!";
+        return;
+      }
+
+      // Store user email
+      localStorage.setItem("user", email);
+
+      // Admin redirect
+      var adminEmails = ["admin@aec.edu.in", "23a91a6127@aec.edu.in"];
+      var isAdmin = adminEmails.some(function (a) { return email === a; });
+
+      if (isAdmin) {
+        window.location.href = "admin_dashboard.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+
+    function forgotPassword() {
+      var e = prompt("Enter your college email:");
+      if (e) alert("Reset link sent to: " + e);
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") doLogin();
+    });
+  </script>
+
+<script>
+(function(){
+  var saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+})();
+function toggleTheme() {
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme') === 'dark';
+  var next = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+}
+</script>
+</body>
+
+</html>

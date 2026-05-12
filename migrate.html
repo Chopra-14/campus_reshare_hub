@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Migrate Items to Firebase</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f6fb; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: white; border-radius: 16px; padding: 36px; max-width: 520px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
+    h1 { font-family: 'Calibri', Georgia, serif; font-size: 1.6rem; color: #111827; margin-bottom: 6px; }
+    p { color: #6b7280; font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .status { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #166534; margin-bottom: 16px; display: none; }
+    .status.error { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+    .status.info  { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+    .preview { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; font-size: 12px; color: #374151; margin-bottom: 20px; max-height: 200px; overflow-y: auto; display: none; }
+    .preview div { padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
+    .preview div:last-child { border-bottom: none; }
+    .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
+    .btn-primary { background: #3b4fd8; color: white; }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .count-row { display: flex; gap: 12px; margin-bottom: 20px; }
+    .count-box { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; text-align: center; }
+    .count-box .num { font-family: 'Calibri', Georgia, serif; font-size: 2rem; font-weight: 800; color: #3b4fd8; }
+    .count-box .label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .done-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<button class="theme-btn" onclick="toggleMigrateTheme()" id="migrateThemeBtn">🌙</button>
+<div class="card">
+  <div id="step1">
+    <h1>🔄 Migrate Items to Firebase</h1>
+    <p>Your old items were saved in browser storage. This tool will upload them to Firebase so they appear on all devices permanently.</p>
+
+    <div class="count-row">
+      <div class="count-box">
+        <div class="num" id="cntLost">—</div>
+        <div class="label">Lost Items</div>
+      </div>
+      <div class="count-box">
+        <div class="num" id="cntFound">—</div>
+        <div class="label">Found Items</div>
+      </div>
+    </div>
+
+    <div class="preview" id="preview"></div>
+    <div class="status" id="status"></div>
+
+    <button class="btn btn-secondary" onclick="scanStorage()" style="margin-bottom:10px">🔍 Scan Browser Storage</button>
+    <button class="btn btn-primary" id="migrateBtn" onclick="migrate()" disabled>🚀 Migrate to Firebase</button>
+  </div>
+
+  <div id="step2" style="display:none; text-align:center">
+    <div class="done-icon">✅</div>
+    <h1 style="text-align:center; margin-bottom:12px">Migration Complete!</h1>
+    <p style="text-align:center; margin-bottom:24px">All your items have been uploaded to Firebase and will now appear on all devices.</p>
+    <a href="found-items.html"><button class="btn btn-primary" style="margin-bottom:10px">View Found Items →</button></a>
+    <a href="lost-items.html"><button class="btn btn-secondary">View Lost Items →</button></a>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAEZf8xbIFCzjHZ5PzzhMFltAOmnluJnwk",
+  authDomain: "campus-reshare.firebaseapp.com",
+  databaseURL: "https://campus-reshare-default-rtdb.firebaseio.com/",
+  projectId: "campus-reshare",
+  storageBucket: "campus-reshare.appspot.com",
+  messagingSenderId: "182045823730",
+  appId: "1:182045823730:web:fe14335d18c777acaf766b"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let lostItems  = [];
+let foundItems = [];
+
+function showStatus(msg, type='success'){
+  const el = document.getElementById('status');
+  el.innerText = msg;
+  el.className = 'status ' + type;
+  el.style.display = 'block';
+}
+
+function scanStorage(){
+  lostItems  = JSON.parse(localStorage.getItem('lostItems'))  || [];
+  foundItems = JSON.parse(localStorage.getItem('foundItems')) || [];
+
+  document.getElementById('cntLost').innerText  = lostItems.length;
+  document.getElementById('cntFound').innerText = foundItems.length;
+
+  const total = lostItems.length + foundItems.length;
+
+  if(total === 0){
+    showStatus('No items found in browser storage. They may have already been migrated or were cleared.', 'error');
+    return;
+  }
+
+  // Show preview
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  preview.innerHTML = '';
+  [...lostItems.map(i => '🔴 [Lost] ' + i.name), ...foundItems.map(i => '🟢 [Found] ' + i.name)]
+    .forEach(txt => {
+      const d = document.createElement('div');
+      d.innerText = txt;
+      preview.appendChild(d);
+    });
+
+  showStatus(`Found ${total} item(s) ready to migrate to Firebase.`, 'info');
+  document.getElementById('migrateBtn').disabled = false;
+}
+
+async function migrate(){
+  const btn = document.getElementById('migrateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Uploading...';
+
+  try {
+    // Upload lost items
+    for(let item of lostItems){
+      await db.ref('lostItems').push(item);
+    }
+    // Upload found items
+    for(let item of foundItems){
+      await db.ref('foundItems').push(item);
+    }
+
+    // Clear localStorage items after successful migration
+    localStorage.removeItem('lostItems');
+    localStorage.removeItem('foundItems');
+
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+
+  } catch(err){
+    showStatus('Error: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Migrate to Firebase';
+  }
+}
+
+// Auto-scan on load
+window.onload = scanStorage;
+</script>
+<script>
+(function(){
+  var s = localStorage.getItem('theme')||'dark';
+  document.documentElement.setAttribute('data-theme',s);
+  var b=document.getElementById('migrateThemeBtn');
+  if(b) b.textContent=s==='dark'?'☀️':'🌙';
+})();
+function toggleMigrateTheme(){
+  var h=document.documentElement;
+  var n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',n); localStorage.setItem('theme',n);
+  var b=document.getElementById('migrateThemeBtn');
+  if(b) b.textContent=n==='dark'?'☀️':'🌙';
+}
+</script>
+</body>
+</html>

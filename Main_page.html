@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Campus ReShare Hub</title>
+<script>(function(){ var t=localStorage.getItem('theme')||'dark'; document.documentElement.setAttribute('data-theme',t); })();</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+/* RESPONSIVE MAIN PAGE */
+@media (max-width: 768px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { display: none; } /* Hide links or move to a burger menu */
+  
+  .hero h1 { font-size: 2.5rem; }
+  .hero p { font-size: 1rem; width: 90%; }
+  
+  .explore-grid {
+    grid-template-columns: 1fr; /* Stack cards */
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+}
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
+
+[data-theme="dark"] {
+  --bg:#0d0920; --bg2:#14102e; --bg3:#1d1845;
+  --fg:#ede8ff; --fg2:rgba(210,195,255,0.55); --fg3:rgba(180,160,255,0.3);
+  --purple:#8b5cf6; --purple-hi:#a78bfa; --purple-lo:rgba(139,92,246,0.15);
+  --teal:#10d9a8; --teal-lo:rgba(16,217,168,0.12);
+  --border:rgba(139,92,246,0.18); --ring:rgba(139,92,246,0.12);
+  --nav-bg:rgba(13,9,32,0.82); --card-bg:rgba(29,24,69,0.7);
+  --stat-bg:rgba(139,92,246,0.08); --shadow:rgba(139,92,246,0.25);
+  --divider:rgba(139,92,246,0.12);
+}
+[data-theme="light"] {
+  --bg:#f2eeff; --bg2:#e9e1ff; --bg3:#ddd4ff;
+  --fg:#1e0a4a; --fg2:rgba(60,30,120,0.6); --fg3:rgba(60,30,120,0.25);
+  --purple:#7c3aed; --purple-hi:#9f5fff; --purple-lo:rgba(124,58,237,0.12);
+  --teal:#0bb88d; --teal-lo:rgba(11,184,141,0.1);
+  --border:rgba(124,58,237,0.2); --ring:rgba(124,58,237,0.1);
+  --nav-bg:rgba(242,238,255,0.88); --card-bg:rgba(255,255,255,0.7);
+  --stat-bg:rgba(124,58,237,0.07); --shadow:rgba(124,58,237,0.18);
+  --divider:rgba(124,58,237,0.12);
+}
+
+html, body { height: 100%; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  transition: background 0.45s, color 0.45s;
+}
+body.explore-open { overflow-y: auto; }
+
+.blob { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+.blob-1 { width:520px;height:520px;top:-120px;right:-80px; background:radial-gradient(circle,rgba(139,92,246,0.22) 0%,transparent 70%); }
+.blob-2 { width:400px;height:400px;bottom:-80px;left:-60px; background:radial-gradient(circle,rgba(16,217,168,0.12) 0%,transparent 70%); }
+.blob-3 { width:300px;height:300px;top:40%;left:35%; background:radial-gradient(circle,rgba(139,92,246,0.08) 0%,transparent 70%); }
+
+#particle-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.7; }
+
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1.2rem 3rem;
+  background:var(--nav-bg);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  transition:background 0.45s, border-color 0.45s;
+}
+.nav-logo { display:flex; align-items:center; gap:0.7rem; text-decoration:none; cursor:pointer; }
+.logo-icon { width:34px;height:34px;border-radius:8px; background:var(--purple-lo); border:1px solid var(--border); display:flex;align-items:center;justify-content:center;font-size:1rem; transition:background 0.45s; }
+.logo-text { font-family:'Calibri',Georgia,serif; font-size:1rem; font-weight:700; letter-spacing:-0.01em; color:var(--fg); }
+.logo-text span { color:var(--purple-hi); }
+.nav-right { display:flex; align-items:center; gap:1.2rem; }
+.nav-pill { font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:0.12em; padding:0.35rem 0.85rem; border-radius:100px; background:var(--purple-lo); color:var(--purple-hi); border:1px solid var(--border); }
+
+.toggle-wrap { position:relative; width:52px; height:28px; }
+.toggle-wrap input { display:none; }
+.toggle-track { position:absolute; inset:0; border-radius:100px; background:var(--bg3); border:1px solid var(--border); cursor:pointer; transition:background 0.3s, border 0.3s; }
+.toggle-track::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--purple); transition:transform 0.3s, background 0.3s; }
+.toggle-wrap input:checked + .toggle-track { background:var(--purple-lo); }
+.toggle-wrap input:checked + .toggle-track::after { transform:translateX(24px); background:var(--purple-hi); }
+.toggle-icon { position:absolute; top:50%; font-size:0.65rem; transform:translateY(-50%); pointer-events:none; }
+.toggle-icon.moon { left:6px; }
+.toggle-icon.sun { right:5px; }
+
+.page { position:absolute; top:0; left:0; width:100%; min-height:100vh; transition:opacity 0.4s ease, transform 0.4s ease; }
+.page.hidden { opacity:0; pointer-events:none; transform:translateY(16px); }
+.page.visible { opacity:1; pointer-events:all; transform:translateY(0); }
+
+/* HOME */
+.hero {
+  position:relative; z-index:10; height:calc(100vh - 64px);
+  display:grid; grid-template-columns:1fr 1fr;
+  align-items:center; gap:3rem;
+  padding:0 3rem;
+  max-width:1280px; margin:0 auto;
+}
+.hero-left { display:flex; flex-direction:column; gap:1.4rem; }
+.eyebrow { display:inline-flex; align-items:center; gap:0.5rem; font-family:'Space Mono',monospace; font-size:0.62rem; letter-spacing:0.2em; color:var(--teal); opacity:0; animation:riseIn 0.7s 0.1s ease forwards; }
+.eyebrow-dot { width:6px;height:6px;border-radius:50%;background:var(--teal); animation:blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.hero-title { font-family:'Calibri',Georgia,serif; font-weight:800; line-height:1.0; opacity:0; animation:riseIn 0.7s 0.25s ease forwards; }
+.title-campus { display:block; font-size:clamp(3.2rem,5.5vw,5rem); color:var(--fg); letter-spacing:-0.03em; }
+.title-reshare { display:block; font-size:clamp(3.5rem,6vw,5.5rem); background:linear-gradient(135deg, var(--purple-hi) 0%, var(--teal) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-0.04em; }
+.title-hub { display:block; font-size:clamp(2.8rem,4.5vw,4rem); color:var(--fg2); letter-spacing:-0.02em; font-weight:600; }
+.hero-desc { font-size:1rem; line-height:1.7; color:var(--fg2); max-width:420px; font-weight:300; opacity:0; animation:riseIn 0.7s 0.4s ease forwards; }
+.hero-desc strong { color:var(--fg); font-weight:500; }
+.cta-row { display:flex; gap:0.9rem; flex-wrap:wrap; opacity:0; animation:riseIn 0.7s 0.55s ease forwards; }
+
+.btn-explore { display:inline-flex; align-items:center; gap:0.6rem; padding:0.85rem 2rem; background:var(--purple); color:#fff; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; border:none; border-radius:10px; cursor:pointer; text-decoration:none; transition:background 0.25s, transform 0.2s, box-shadow 0.25s; box-shadow:0 4px 24px var(--shadow); }
+.btn-explore:hover { background:var(--purple-hi); transform:translateY(-2px); box-shadow:0 8px 32px var(--shadow); }
+.btn-signin { display:inline-flex; align-items:center; gap:0.6rem; padding:0.85rem 1.8rem; background:var(--card-bg); color:var(--fg); font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:500; border:1px solid var(--border); border-radius:10px; cursor:pointer; text-decoration:none; transition:background 0.25s, border-color 0.25s, transform 0.2s; backdrop-filter:blur(10px); }
+.btn-signin:hover { border-color:var(--purple-hi); color:var(--purple-hi); transform:translateY(-2px); }
+
+.stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; max-width:280px; opacity:0; animation:riseIn 0.7s 0.7s ease forwards; }
+.stat-card { padding:1rem 1.2rem; background:var(--stat-bg); border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; gap:0.2rem; transition:background 0.45s, border-color 0.45s; }
+.stat-num { font-family:'Calibri',Georgia,serif; font-size:1.7rem; font-weight:800; color:var(--purple-hi); line-height:1; }
+.stat-label { font-size:0.65rem; letter-spacing:0.15em; color:var(--fg3); text-transform:uppercase; font-family:'Space Mono',monospace; }
+
+.hero-right { display:flex; align-items:center; justify-content:center; position:relative; opacity:0; animation:riseIn 1s 0.3s ease forwards; }
+.radar-wrap { position:relative; width:min(480px,45vw); height:min(480px,45vw); }
+#radar-canvas { width:100%; height:100%; border-radius:50%; }
+.float-tag { position:absolute; padding:0.4rem 0.9rem; border-radius:100px; font-size:0.72rem; font-weight:600; backdrop-filter:blur(12px); border:1px solid var(--border); background:var(--card-bg); color:var(--fg); white-space:nowrap; pointer-events:none; display:flex; align-items:center; gap:0.4rem; }
+.float-tag .dot { width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0; }
+.tag-marketplace { top:8%;right:-10%;animation:floatY 4s ease-in-out infinite; }
+.tag-lost { bottom:22%;right:-12%;animation:floatY 4s 1s ease-in-out infinite; }
+.tag-verify { top:32%;left:-14%;animation:floatY 4s 0.5s ease-in-out infinite; }
+@keyframes floatY { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+
+.section-divider { position:relative; z-index:10; max-width:1280px; margin:0 auto; padding:0 3rem; }
+.divider-line { border:none; border-top:1px solid var(--divider); }
+
+.features { position:relative; z-index:10; max-width:1280px; margin:0 auto; padding:3rem 3rem 5rem; display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+.feat-card { padding:1.6rem; background:var(--card-bg); border:1px solid var(--border); border-radius:16px; backdrop-filter:blur(10px); transition:border-color 0.3s, transform 0.3s, background 0.45s; cursor:default; }
+.feat-card:hover { border-color:var(--purple); transform:translateY(-4px); }
+.feat-icon { width:42px;height:42px;border-radius:10px; background:var(--purple-lo); border:1px solid var(--border); display:flex;align-items:center;justify-content:center; font-size:1.2rem; margin-bottom:1rem; }
+.feat-title { font-family:'Calibri',Georgia,serif; font-weight:700; font-size:1rem; margin-bottom:0.4rem; color:var(--fg); }
+.feat-desc { font-size:0.85rem; color:var(--fg2); line-height:1.6; font-weight:300; }
+
+/* ── EXPLORE PAGE ── */
+#explore-page { padding-top:5.5rem; background:var(--bg); transition:background 0.45s; }
+
+.back-btn { display:inline-flex; align-items:center; gap:0.5rem; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; color:var(--fg2); background:none; border:none; cursor:pointer; padding:0; margin:1.5rem 0 0 3rem; transition:color 0.2s; }
+.back-btn:hover { color:var(--purple-hi); }
+.back-btn svg { transition:transform 0.2s; }
+.back-btn:hover svg { transform:translateX(-3px); }
+
+.explore-banner { position:relative; z-index:10; max-width:1280px; margin:0 auto; padding:2.5rem 3rem 3rem; display:grid; grid-template-columns:1fr auto; align-items:end; gap:2rem; border-bottom:1px solid var(--divider); }
+.explore-eyebrow { font-family:'Space Mono',monospace; font-size:0.62rem; letter-spacing:0.2em; color:var(--teal); margin-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; }
+.explore-title { font-family:'Calibri',Georgia,serif; font-size:clamp(2rem,4vw,3.2rem); font-weight:800; line-height:1.1; color:var(--fg); }
+.explore-title span { background:linear-gradient(135deg, var(--purple-hi) 0%, var(--teal) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.explore-badge { display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--fg3); letter-spacing:0.1em; text-align:right; }
+.explore-badge strong { display:block; font-family:'Calibri',Georgia,serif; font-size:1.1rem; font-weight:800; color:var(--purple-hi); -webkit-text-fill-color:var(--purple-hi); letter-spacing:-0.02em; }
+
+/* About section — full width, clean layout */
+.explore-about {
+  position:relative; z-index:10;
+  max-width:900px; margin:0 auto;
+  padding:3rem 3rem 5rem;
+  display:flex; flex-direction:column; gap:2.5rem;
+}
+
+.about-intro {
+  display:flex; flex-direction:column; gap:0.8rem;
+}
+.about-tag { display:inline-flex; align-items:center; gap:0.5rem; font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:0.18em; color:var(--teal); }
+.about-tag::before { content:''; display:block; width:20px; height:1px; background:var(--teal); }
+.about-heading { font-family:'Calibri',Georgia,serif; font-size:1.5rem; font-weight:700; color:var(--fg); line-height:1.25; }
+.about-lead { font-size:0.95rem; line-height:1.8; color:var(--fg2); font-weight:300; max-width:680px; }
+.about-lead strong { color:var(--fg); font-weight:500; }
+
+/* Module cards */
+.module-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+.module-card { padding:1.6rem; background:var(--card-bg); border:1px solid var(--border); border-radius:16px; backdrop-filter:blur(10px); transition:border-color 0.3s, transform 0.25s, background 0.45s; }
+.module-card:hover { border-color:var(--purple); transform:translateY(-3px); }
+.module-card-head { display:flex; align-items:center; gap:0.8rem; margin-bottom:0.9rem; }
+.module-icon { width:40px;height:40px;border-radius:10px; background:var(--purple-lo); border:1px solid var(--border); display:flex;align-items:center;justify-content:center;font-size:1.1rem; flex-shrink:0; }
+.module-title { font-family:'Calibri',Georgia,serif; font-size:1rem; font-weight:700; color:var(--fg); }
+.module-subtitle { font-size:0.75rem; color:var(--fg3); font-family:'Space Mono',monospace; letter-spacing:0.08em; margin-top:0.1rem; }
+.module-desc { font-size:0.85rem; line-height:1.7; color:var(--fg2); font-weight:300; margin-bottom:1rem; }
+.module-pills { display:flex; flex-wrap:wrap; gap:0.4rem; }
+.pill { font-family:'Space Mono',monospace; font-size:0.58rem; letter-spacing:0.1em; padding:0.3rem 0.7rem; border-radius:100px; background:var(--purple-lo); color:var(--purple-hi); border:1px solid var(--border); white-space:nowrap; }
+.pill.teal { background:var(--teal-lo); color:var(--teal); border-color:rgba(16,217,168,0.2); }
+
+/* Key info strip */
+.about-strip {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
+  padding:1.5rem;
+  background:var(--stat-bg); border:1px solid var(--border); border-radius:16px;
+}
+.strip-item { display:flex; flex-direction:column; gap:0.3rem; padding:0 1rem; border-right:1px solid var(--divider); }
+.strip-item:first-child { padding-left:0; }
+.strip-item:last-child { border-right:none; }
+.strip-num { font-family:'Calibri',Georgia,serif; font-size:1.6rem; font-weight:800; color:var(--purple-hi); line-height:1; }
+.strip-label { font-size:0.62rem; letter-spacing:0.15em; color:var(--fg3); text-transform:uppercase; font-family:'Space Mono',monospace; }
+.strip-note { font-size:0.78rem; color:var(--fg2); margin-top:0.1rem; }
+
+/* Tech + team */
+.about-two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+.mini-card { padding:1.4rem; background:var(--card-bg); border:1px solid var(--border); border-radius:14px; backdrop-filter:blur(10px); transition:background 0.45s; }
+.mini-card-title { font-family:'Calibri',Georgia,serif; font-size:0.9rem; font-weight:700; color:var(--fg); margin-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; }
+.mini-card-title span { font-size:1rem; }
+.tech-pills { display:flex; flex-wrap:wrap; gap:0.4rem; }
+.team-list { display:flex; flex-direction:column; gap:0.45rem; }
+.team-member { display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--fg2); font-weight:300; }
+.team-avatar { width:26px;height:26px;border-radius:50%; background:var(--purple-lo); border:1px solid var(--border); display:flex;align-items:center;justify-content:center; font-size:0.65rem; font-weight:700; color:var(--purple-hi); flex-shrink:0; }
+
+@keyframes riseIn { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+
+/* ════════════════════════════════════════
+   SIGN-IN OVERLAY  — Project Space style
+   ════════════════════════════════════════ */
+#signin-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  background: #050507;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+#signin-overlay.si-visible { opacity: 1; pointer-events: all; }
+
+/* star canvas lives inside overlay */
+#si-star-canvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
+
+/* milky-way nebula sweep — pure CSS */
+.si-nebula {
+  position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:
+    radial-gradient(ellipse 90% 40% at 60% 55%, rgba(55,8,5,0.6) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 65% at 78% 28%, rgba(28,4,4,0.5) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 30% at 20% 75%, rgba(6,4,18,0.4) 0%, transparent 70%);
+}
+
+/* glowing planet — top-right, matching screenshot */
+.si-planet {
+  position:absolute; top:-170px; right:-170px;
+  width:580px; height:580px; border-radius:50%;
+  background: radial-gradient(circle at 36% 30%,
+    #2c0c09 0%, #160404 32%, #0b0101 58%, #020001 100%);
+  box-shadow:
+    inset -50px -50px 90px rgba(200,25,10,0.45),
+    inset 18px 18px 70px rgba(0,0,0,0.92),
+    0 0 160px rgba(190,25,8,0.16),
+    0 0 60px  rgba(190,25,8,0.08);
+  animation: siPlanetDrift 13s ease-in-out infinite alternate;
+  pointer-events:none; z-index:2;
+}
+.si-planet::before {
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background: radial-gradient(ellipse at 68% 36%, rgba(230,60,20,0.22) 0%, transparent 55%);
+}
+.si-planet::after {
+  content:''; position:absolute; top:10%; left:7%;
+  width:68%; height:52%; border-radius:50%;
+  background: radial-gradient(ellipse, rgba(255,90,35,0.08) 0%, transparent 70%);
+  filter:blur(14px);
+}
+@keyframes siPlanetDrift {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  100% { transform: translate(-14px,20px) rotate(5deg); }
+}
+
+/* surface texture dots on planet */
+.si-planet-dots {
+  position:absolute; inset:0; border-radius:50%; overflow:hidden; z-index:3; pointer-events:none;
+}
+
+/* robot — bottom-left */
+.si-robot {
+  position:absolute; bottom:0; left:2vw;
+  width:195px; z-index:10; pointer-events:none;
+  animation: siRobotBob 4.2s ease-in-out infinite;
+  filter: drop-shadow(0 20px 45px rgba(210,45,15,0.42));
+}
+@keyframes siRobotBob {
+  0%,100% { transform:translateY(0) rotate(-0.8deg); }
+  50%      { transform:translateY(-15px) rotate(0.8deg); }
+}
+
+/* back button — top left */
+.si-back-top {
+  position:absolute; top:1.6rem; left:1.8rem; z-index:20;
+  display:inline-flex; align-items:center; gap:0.45rem;
+  background:none; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:500;
+  color:rgba(255,255,255,0.42); transition:color 0.22s;
+}
+.si-back-top:hover { color:rgba(255,255,255,0.85); }
+.si-back-top svg { transition:transform 0.2s; }
+.si-back-top:hover svg { transform:translateX(-3px); }
+
+/* center content */
+.si-center {
+  position:relative; z-index:15;
+  display:flex; flex-direction:column; align-items:center; gap:1.45rem;
+  animation: siRise 0.65s cubic-bezier(0.22,1,0.36,1) both;
+}
+.si-center.si-hidden { animation:none; opacity:0; }
+@keyframes siRise {
+  from { opacity:0; transform:translateY(26px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* logo block */
+.si-logo-group { display:flex; flex-direction:column; align-items:center; gap:0.75rem; }
+.si-logo-wrap { position:relative; display:inline-block; }
+.si-logo-icon {
+  position:relative; width:62px; height:62px; border-radius:17px;
+  background: linear-gradient(138deg, #f04530 0%, #bf2519 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Calibri',Georgia,serif; font-size:1rem; font-weight:800;
+  color:#fff; letter-spacing:0.06em;
+  box-shadow: 0 8px 38px rgba(215,48,28,0.58), 0 2px 8px rgba(0,0,0,0.45);
+  overflow:hidden; z-index:1;
+}
+.si-logo-icon::before {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background: linear-gradient(135deg,rgba(255,255,255,0.24) 0%,transparent 55%);
+}
+.si-ring-1 {
+  position:absolute; inset:-8px; border-radius:22px;
+  border:1.5px solid rgba(215,48,28,0.48);
+  animation: siRingPulse 2.6s ease-in-out infinite;
+}
+.si-ring-2 {
+  position:absolute; inset:-16px; border-radius:26px;
+  border:1px solid rgba(215,48,28,0.2);
+  animation: siRingPulse 2.6s 0.55s ease-in-out infinite;
+}
+@keyframes siRingPulse {
+  0%,100% { transform:scale(1); opacity:0.55; }
+  50%      { transform:scale(1.09); opacity:0; }
+}
+
+.si-brand {
+  font-family:'Space Mono',monospace; font-size:1.1rem; font-weight:700;
+  letter-spacing:0.32em; color:#fff;
+  text-shadow: 0 0 44px rgba(215,48,28,0.38);
+}
+.si-sub {
+  font-family:'Space Mono',monospace; font-size:0.59rem;
+  letter-spacing:0.26em; color:rgba(255,255,255,0.32);
+  margin-top:-0.9rem;
+}
+
+/* role buttons */
+.si-roles { display:flex; gap:2.5rem; margin:0.3rem 0; }
+
+.si-role {
+  position:relative; width:135px; height:135px; border-radius:50%;
+  background:rgba(255,255,255,0.035);
+  border:1.5px solid rgba(255,255,255,0.1);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; color:rgba(255,255,255,0.38); overflow:visible;
+  transition: color .3s, border-color .3s, background .3s, transform .25s, box-shadow .3s;
+}
+.si-role:hover {
+  color:rgba(255,255,255,0.65);
+  border-color:rgba(255,255,255,0.22);
+  background:rgba(255,255,255,0.065);
+  transform:translateY(-5px) scale(1.04);
+}
+.si-role.si-active {
+  color:#e8391e;
+  border-color:rgba(220,55,30,0.72);
+  background:rgba(220,55,30,0.1);
+  transform:translateY(-5px) scale(1.05);
+  box-shadow: 0 0 38px rgba(220,55,30,0.28), inset 0 0 22px rgba(220,55,30,0.07);
+}
+.si-role-pulse {
+  position:absolute; inset:-10px; border-radius:50%;
+  border:1.5px solid rgba(220,55,30,0.36);
+  opacity:0; animation:siRolePulse 2.3s ease-in-out infinite; pointer-events:none;
+}
+.si-role.si-active .si-role-pulse { opacity:1; }
+@keyframes siRolePulse {
+  0%,100% { transform:scale(1); opacity:0.36; }
+  50%      { transform:scale(1.07); opacity:0; }
+}
+.si-role-svg { width:52px; height:52px; margin-bottom:26px; }
+.si-role-svg svg { width:100%; height:100%; }
+.si-role-lbl {
+  position:absolute; bottom:15px;
+  font-family:'Space Mono',monospace; font-size:0.5rem;
+  letter-spacing:0.14em; font-weight:700; white-space:nowrap;
+}
+
+/* next step */
+.si-next {
+  display:inline-flex; align-items:center; gap:0.85rem;
+  padding:0.92rem 2.9rem;
+  background:rgba(255,255,255,0.055);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:10px;
+  font-family:'Space Mono',monospace; font-size:0.7rem;
+  letter-spacing:0.22em; color:rgba(255,255,255,0.55);
+  cursor:pointer;
+  transition: background .28s, border-color .28s, color .28s, transform .2s, box-shadow .28s;
+  backdrop-filter:blur(8px);
+}
+.si-next:hover {
+  background:rgba(220,55,30,0.14); border-color:rgba(220,55,30,0.46); color:#fff;
+  transform:translateY(-2px);
+}
+.si-next.si-ready {
+  border-color:rgba(220,55,30,0.62);
+  background:rgba(220,55,30,0.15); color:#fff;
+  box-shadow: 0 4px 26px rgba(220,55,30,0.3);
+}
+.si-next.si-shake { animation:siShake .38s ease; }
+@keyframes siShake {
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-7px);}
+  40%{transform:translateX(7px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
+
+/* back to home link */
+.si-back-home {
+  background:none; border:none; cursor:pointer;
+  display:inline-flex; align-items:center; gap:0.4rem;
+  font-family:'DM Sans',sans-serif; font-size:0.78rem;
+  color:rgba(255,255,255,0.27); transition:color .2s;
+}
+.si-back-home:hover { color:rgba(255,255,255,0.58); }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<canvas id="particle-canvas"></canvas>
+
+<nav>
+  <div class="nav-logo" onclick="goHome()">
+    <div class="logo-icon">♻️</div>
+    <span class="logo-text">Campus <span>ReShare</span> Hub</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-pill">CAMPUS NETWORK</span>
+    <label class="toggle-wrap" title="Toggle dark/light mode">
+      <input type="checkbox" id="theme-toggle"/>
+      <div class="toggle-track"></div>
+      <span class="toggle-icon moon">🌙</span>
+      <span class="toggle-icon sun">☀️</span>
+    </label>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="home-page" class="page visible">
+  <section class="hero">
+    <div class="hero-left">
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        VERIFIED STUDENT PLATFORM — ADITYA UNIVERSITY
+      </div>
+      <h1 class="hero-title">
+        <span class="title-campus">Campus</span>
+        <span class="title-reshare">ReShare</span>
+        <span class="title-hub">Hub.</span>
+      </h1>
+      <p class="hero-desc">
+        <strong>Trade smart. Find fast. Recover.</strong><br/>
+        Your college's all-in-one marketplace and lost &amp; found — verified and built only for campus students.
+      </p>
+      <div class="cta-row">
+        <button class="btn-explore" onclick="goExplore()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Explore
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="btn-signin" onclick="window.location.href='signin.html'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Sign In
+        </button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-num" id="s1">0</span>
+          <span class="stat-label">Campuses</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="s2">0%</span>
+          <span class="stat-label">Verified</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="radar-wrap">
+        <canvas id="radar-canvas"></canvas>
+        <div class="float-tag tag-marketplace"><span class="dot"></span> Marketplace</div>
+        <div class="float-tag tag-lost"><span class="dot" style="background:var(--purple-hi)"></span> Lost &amp; Found</div>
+        <div class="float-tag tag-verify"><span class="dot" style="background:#fbbf24"></span> 100% Verified</div>
+      </div>
+    </div>
+  </section>
+
+
+</div>
+
+<!-- EXPLORE PAGE -->
+<div id="explore-page" class="page hidden">
+
+  <button class="back-btn" onclick="goHome()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to Home
+  </button>
+
+  <div class="explore-banner">
+    <div>
+      <div class="explore-eyebrow">
+        <span style="width:20px;height:1px;background:var(--teal);display:inline-block;"></span>
+        ABOUT THE PLATFORM
+      </div>
+      <h2 class="explore-title">What is <span>Campus ReShare Hub</span>?</h2>
+    </div>
+    <div class="explore-badge">
+      <strong>CRH</strong>
+      STUDENT PLATFORM<br/>ACET NETWORK
+    </div>
+  </div>
+
+  <!-- ABOUT SECTION — clean, no stats/CTA -->
+  <div class="explore-about">
+
+    <!-- Intro -->
+    <div class="about-intro">
+      <div class="about-tag">OVERVIEW</div>
+      <h3 class="about-heading">A secure campus ecosystem for item recovery &amp; student resale.</h3>
+      <p class="about-lead">
+        <strong>Campus ReShare Hub</strong> is a smart digital platform that helps students recover lost belongings and safely buy or sell second-hand academic essentials — all within a verified college environment. Only students with an institutional email can access it, ensuring a trusted and safe community.
+      </p>
+    </div>
+
+    <!-- Two modules -->
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">🔍</div>
+          <div>
+            <div class="module-title">Lost &amp; Found</div>
+            <div class="module-subtitle">ITEM RECOVERY MODULE</div>
+          </div>
+        </div>
+        <p class="module-desc">Report lost or found items with images, location, and date. A smart matching engine compares records and sends automatic notifications when a possible match is found.</p>
+        <div class="module-pills">
+          <span class="pill teal">Smart Matching</span>
+          <span class="pill teal">Auto Alerts</span>
+          <span class="pill teal">Photo Upload</span>
+          <span class="pill teal">Location Tags</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">🛒</div>
+          <div>
+            <div class="module-title">Student Marketplace</div>
+            <div class="module-subtitle">RESALE MODULE</div>
+          </div>
+        </div>
+        <p class="module-desc">List and discover second-hand books, electronics, cycles, lab equipment, and hostel essentials. Built-in chat connects buyers and sellers directly on campus.</p>
+        <div class="module-pills">
+          <span class="pill">Buyer–Seller Chat</span>
+          <span class="pill">Category Filters</span>
+          <span class="pill">Suspicious Listing Detection</span>
+          <span class="pill">Real-time Alerts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick stats strip -->
+    <div class="about-strip">
+      <div class="strip-item">
+        <span class="strip-num">3</span>
+        <span class="strip-label">Campuses</span>
+        <span class="strip-note">AEC · ACET · ACOE network</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-num">100%</span>
+        <span class="strip-label">Verified Access</span>
+        <span class="strip-note">Institutional email only</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-num">2-in-1</span>
+        <span class="strip-label">Platform</span>
+        <span class="strip-note">Marketplace + Lost &amp; Found</span>
+      </div>
+    </div>
+
+    <!-- Tech stack + Team -->
+    <div class="about-two-col">
+      <div class="mini-card">
+        <div class="mini-card-title"><span>⚙️</span> Technologies Used</div>
+        <div class="tech-pills">
+          <span class="pill">React.js</span>
+          <span class="pill">Firebase</span>
+          <span class="pill">EmailJS</span>
+          <span class="pill teal">Power BI</span>
+          <span class="pill teal">Copilot AI Studio</span>
+          <span class="pill teal">Power Automate</span>
+          <span class="pill">HTML · CSS · JS</span>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title"><span>👥</span> Team Members</div>
+        <div class="team-list">
+          <div class="team-member"><div class="team-avatar">A</div> Akshat</div>
+          <div class="team-member"><div class="team-avatar">C</div> Charmi</div>
+          <div class="team-member"><div class="team-avatar">S</div> Sathvika</div>
+          <div class="team-member"><div class="team-avatar">V</div> Venkata Lakshmi</div>
+          <div class="team-member"><div class="team-avatar">R</div> Ramya</div>
+          <div class="team-member"><div class="team-avatar">H</div> Hanisha</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function goExplore() {
+  document.getElementById('home-page').classList.remove('visible');
+  document.getElementById('home-page').classList.add('hidden');
+  document.getElementById('explore-page').classList.remove('hidden');
+  document.getElementById('explore-page').classList.add('visible');
+  document.body.classList.add('explore-open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function goHome() {
+  document.getElementById('signin-overlay') && document.getElementById('signin-overlay').classList.remove('si-visible');
+  document.getElementById('explore-page').classList.remove('visible');
+  document.getElementById('explore-page').classList.add('hidden');
+  document.getElementById('home-page').classList.remove('hidden');
+  document.getElementById('home-page').classList.add('visible');
+  document.body.classList.remove('explore-open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelector('.nav-logo').addEventListener('click', goHome);
+
+const toggle = document.getElementById('theme-toggle');
+// Sync checkbox state with saved theme on load
+(function(){
+  var saved = localStorage.getItem('theme') || 'dark';
+  toggle.checked = saved === 'light';
+})();
+toggle.addEventListener('change', () => {
+  var next = toggle.checked ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+});
+
+const pc = document.getElementById('particle-canvas');
+const pctx = pc.getContext('2d');
+let particles = [];
+function resizePC() {
+  pc.width = window.innerWidth; pc.height = window.innerHeight;
+  particles = Array.from({length:60}, () => ({
+    x: Math.random()*pc.width, y: pc.height + Math.random()*200,
+    r: 0.8+Math.random()*1.8, speed: 0.3+Math.random()*0.8,
+    drift: (Math.random()-0.5)*0.4, alpha: 0.15+Math.random()*0.35,
+    color: Math.random()>0.5 ? '#8b5cf6' : '#10d9a8'
+  }));
+}
+resizePC();
+window.addEventListener('resize', resizePC);
+function animParticles() {
+  pctx.clearRect(0,0,pc.width,pc.height);
+  particles.forEach(p => {
+    p.y -= p.speed; p.x += p.drift;
+    if (p.y < -10) { p.y = pc.height+20; p.x = Math.random()*pc.width; }
+    pctx.beginPath(); pctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    pctx.fillStyle = p.color + Math.floor(p.alpha*255).toString(16).padStart(2,'0');
+    pctx.fill();
+  });
+}
+
+const rc = document.getElementById('radar-canvas');
+const rctx = rc.getContext('2d');
+const RS = 480; rc.width = RS; rc.height = RS;
+const RCX = RS/2, RCY = RS/2, RMAX = RS*0.46;
+let radarAngle = 0;
+const orbitDots = [
+  {ring:0.35,angle:0.8,speed:0.008,r:4,color:'#10d9a8'},
+  {ring:0.35,angle:3.2,speed:0.008,r:3,color:'#8b5cf6'},
+  {ring:0.60,angle:1.5,speed:0.005,r:5,color:'#10d9a8'},
+  {ring:0.60,angle:4.1,speed:0.005,r:3,color:'#a78bfa'},
+  {ring:0.60,angle:2.4,speed:0.005,r:4,color:'#8b5cf6'},
+  {ring:0.82,angle:0.2,speed:0.003,r:3,color:'#10d9a8'},
+  {ring:0.82,angle:2.5,speed:0.003,r:5,color:'#8b5cf6'},
+  {ring:0.82,angle:5.0,speed:0.003,r:3,color:'#a78bfa'},
+  {ring:1.00,angle:1.1,speed:0.002,r:4,color:'#10d9a8'},
+  {ring:1.00,angle:3.8,speed:0.002,r:3,color:'#8b5cf6'},
+];
+function drawRadar() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const ringColor = isDark ? 'rgba(139,92,246,0.12)' : 'rgba(124,58,237,0.1)';
+  rctx.clearRect(0,0,RS,RS);
+  rctx.beginPath(); rctx.arc(RCX,RCY,RMAX,0,Math.PI*2);
+  rctx.fillStyle = isDark ? 'rgba(20,16,46,0.9)' : 'rgba(235,228,255,0.85)'; rctx.fill();
+  [0.2,0.35,0.50,0.65,0.80,1.0].forEach(f => {
+    rctx.beginPath(); rctx.arc(RCX,RCY,RMAX*f,0,Math.PI*2);
+    rctx.strokeStyle = ringColor; rctx.lineWidth = f===1.0?1.5:0.8; rctx.stroke();
+  });
+  rctx.strokeStyle = ringColor; rctx.lineWidth = 0.5;
+  rctx.beginPath(); rctx.moveTo(RCX,RCY-RMAX); rctx.lineTo(RCX,RCY+RMAX); rctx.stroke();
+  rctx.beginPath(); rctx.moveTo(RCX-RMAX,RCY); rctx.lineTo(RCX+RMAX,RCY); rctx.stroke();
+  for (let i=0;i<30;i++) {
+    const startA = radarAngle-(i/30)*1.4;
+    rctx.beginPath(); rctx.moveTo(RCX,RCY);
+    rctx.arc(RCX,RCY,RMAX*0.99,startA,startA+(1.4/30)); rctx.closePath();
+    rctx.fillStyle = `rgba(139,92,246,${(1-i/30)*0.12})`; rctx.fill();
+  }
+  rctx.save(); rctx.translate(RCX,RCY); rctx.rotate(radarAngle);
+  const lg = rctx.createLinearGradient(0,0,RMAX,0);
+  lg.addColorStop(0,'rgba(167,139,250,0.0)'); lg.addColorStop(1,'rgba(167,139,250,0.9)');
+  rctx.beginPath(); rctx.moveTo(0,0); rctx.lineTo(RMAX,0);
+  rctx.strokeStyle = lg; rctx.lineWidth = 1.5; rctx.stroke(); rctx.restore();
+  orbitDots.forEach(d => {
+    d.angle += d.speed;
+    const dx = RCX+Math.cos(d.angle)*RMAX*d.ring;
+    const dy = RCY+Math.sin(d.angle)*RMAX*d.ring;
+    rctx.beginPath(); rctx.arc(dx,dy,d.r,0,Math.PI*2); rctx.fillStyle=d.color; rctx.fill();
+    rctx.beginPath(); rctx.arc(dx,dy,d.r*3,0,Math.PI*2);
+    const g = rctx.createRadialGradient(dx,dy,0,dx,dy,d.r*3);
+    g.addColorStop(0,d.color+'44'); g.addColorStop(1,'transparent');
+    rctx.fillStyle=g; rctx.fill();
+  });
+  rctx.save(); rctx.translate(RCX,RCY); rctx.rotate(radarAngle*0.15);
+  const cg = rctx.createRadialGradient(0,0,0,0,0,RMAX*0.18);
+  cg.addColorStop(0,'rgba(16,217,168,0.3)'); cg.addColorStop(1,'transparent');
+  rctx.beginPath(); rctx.arc(0,0,RMAX*0.18,0,Math.PI*2); rctx.fillStyle=cg; rctx.fill();
+  rctx.beginPath(); rctx.arc(0,0,RMAX*0.12,0,Math.PI*2);
+  rctx.fillStyle = isDark?'rgba(16,217,168,0.15)':'rgba(11,184,141,0.12)';
+  rctx.strokeStyle='#10d9a8'; rctx.lineWidth=1.5; rctx.fill(); rctx.stroke();
+  const arrowR = RMAX*0.09;
+  for (let i=0;i<3;i++) {
+    rctx.save(); rctx.rotate((i*Math.PI*2/3)-Math.PI/2);
+    rctx.beginPath(); rctx.arc(0,0,arrowR,0.3,Math.PI*0.75);
+    rctx.strokeStyle='#10d9a8'; rctx.lineWidth=2.5; rctx.lineCap='round'; rctx.stroke();
+    rctx.restore();
+  }
+  rctx.restore();
+}
+
+function countUp(el,target,suffix='',delay=0) {
+  setTimeout(() => {
+    const dur=1800; const start=performance.now();
+    function step(now) {
+      const p=Math.min((now-start)/dur,1);
+      const e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(e*target)+suffix;
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }, delay);
+}
+
+function loop(t) {
+  animParticles();
+  radarAngle = (t/1000)*0.9;
+  drawRadar();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+setTimeout(() => {
+  countUp(document.getElementById('s1'),3,'',200);
+  countUp(document.getElementById('s2'),100,'%',400);
+}, 900);
+</script>
+<!-- ═══════════════════════════════════════
+     SIGN-IN OVERLAY — inserted into Main_page
+     ═══════════════════════════════════════ -->
+<div id="signin-overlay">
+  <canvas id="si-star-canvas"></canvas>
+  <div class="si-nebula"></div>
+
+  <!-- Planet top-right -->
+  <div class="si-planet"></div>
+
+  <!-- Robot bottom-left -->
+  <div class="si-robot">
+    <svg viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg">
+      <!-- feet -->
+      <ellipse cx="49" cy="164" rx="10" ry="5" fill="#a81c10"/>
+      <ellipse cx="71" cy="164" rx="10" ry="5" fill="#a81c10"/>
+      <!-- legs -->
+      <rect x="42" y="143" width="14" height="24" rx="7" fill="#e83a2f"/>
+      <rect x="64" y="143" width="14" height="24" rx="7" fill="#e83a2f"/>
+      <!-- body -->
+      <ellipse cx="60" cy="118" rx="30" ry="31" fill="#fff" stroke="#e4e4e4" stroke-width="1.5"/>
+      <ellipse cx="60" cy="120" rx="22" ry="23" fill="#f3f3f3"/>
+      <!-- chest plate -->
+      <rect x="44" y="104" width="32" height="24" rx="7" fill="#e83a2f"/>
+      <circle cx="60" cy="116" r="5.5" fill="rgba(255,255,255,0.52)"/>
+      <circle cx="60" cy="116" r="3"   fill="rgba(255,255,255,0.8)"/>
+      <!-- arms -->
+      <rect x="17" y="97"  width="14" height="33" rx="7" fill="#e83a2f" transform="rotate(-11 24 113)"/>
+      <ellipse cx="15" cy="130" rx="8" ry="5.5" fill="#a81c10" transform="rotate(-11 15 130)"/>
+      <rect x="89" y="97"  width="14" height="33" rx="7" fill="#e83a2f" transform="rotate(11 96 113)"/>
+      <ellipse cx="105" cy="130" rx="8" ry="5.5" fill="#a81c10" transform="rotate(11 105 130)"/>
+      <!-- head -->
+      <rect x="33" y="42" width="54" height="52" rx="25" fill="#fff" stroke="#e4e4e4" stroke-width="1.5"/>
+      <rect x="36" y="45" width="48" height="46" rx="22" fill="#f7f7f7"/>
+      <!-- red cheeks -->
+      <rect x="33" y="57" width="19" height="22" rx="9.5" fill="#e83a2f"/>
+      <rect x="68" y="57" width="19" height="22" rx="9.5" fill="#e83a2f"/>
+      <!-- eyes -->
+      <ellipse cx="50" cy="68" rx="10"  ry="11" fill="#111"/>
+      <ellipse cx="70" cy="68" rx="10"  ry="11" fill="#111"/>
+      <ellipse cx="46.5" cy="64.5" rx="3.8" ry="4.2" fill="rgba(255,255,255,0.34)"/>
+      <ellipse cx="66.5" cy="64.5" rx="3.8" ry="4.2" fill="rgba(255,255,255,0.34)"/>
+      <!-- antenna -->
+      <line x1="60" y1="42" x2="60" y2="26" stroke="#d0d0d0" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="60" cy="21" r="6.5" fill="#e83a2f"/>
+      <circle cx="60" cy="21" r="3"   fill="rgba(255,255,255,0.62)"/>
+      <circle cx="60" cy="21" r="11"  fill="rgba(220,50,30,0.14)"/>
+    </svg>
+  </div>
+
+  <!-- Back — top left -->
+  <button class="si-back-top" onclick="goHome()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back
+  </button>
+
+  <!-- Centre UI -->
+  <div class="si-center" id="si-center">
+
+    <!-- Logo -->
+    <div class="si-logo-group">
+      <div class="si-logo-wrap">
+        <div class="si-ring-1"></div>
+        <div class="si-ring-2"></div>
+        <div class="si-logo-icon">PS</div>
+      </div>
+      <div class="si-brand">CAMPUS RESHARE HUB</div>
+    </div>
+
+    <div class="si-sub">SELECT YOUR ROLE</div>
+
+    <!-- Role cards -->
+    <div class="si-roles">
+      <button class="si-role" id="si-leader" onclick="siSelectRole('leader')">
+        <div class="si-role-pulse"></div>
+        <div class="si-role-svg">
+          <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="18" r="7.5" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M12 43c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M26 2l1.5 4.4H32l-3.7 2.7 1.4 4.4L26 11.3l-3.7 2.2 1.4-4.4L20 6.4h4.5z" fill="currentColor"/>
+            <circle cx="9"  cy="26" r="5.2" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+            <path d="M2 41c0-4.142 3.358-7.5 7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+            <circle cx="43" cy="26" r="5.2" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+            <path d="M50 41c0-4.142-3.358-7.5-7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+        <span class="si-role-lbl">ADMIN</span>
+      </button>
+
+      <button class="si-role" id="si-member" onclick="siSelectRole('member')">
+        <div class="si-role-pulse"></div>
+        <div class="si-role-svg">
+          <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="17" r="7" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="34" cy="17" r="7" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M4 42c0-7.732 6.268-14 14-14h16c7.732 0 14 6.268 14 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="si-role-lbl">STUDENTS</span>
+      </button>
+    </div>
+
+    <!-- Next step -->
+    <button class="si-next" id="si-next-btn" onclick="siHandleNext()">
+      NEXT STEP
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+
+    <!-- Back to home -->
+    <button class="si-back-home" onclick="goHome()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to home
+    </button>
+  </div>
+</div>
+
+<script>
+/* ─── SIGN-IN OVERLAY LOGIC ─── */
+function goSignIn() {
+  const ov = document.getElementById('signin-overlay');
+  ov.classList.add('si-visible');
+  siInitStars();
+  // reset state
+  siSelectedRole = null;
+  document.getElementById('si-leader').classList.remove('si-active');
+  document.getElementById('si-member').classList.remove('si-active');
+  document.getElementById('si-next-btn').classList.remove('si-ready');
+  // re-trigger entry animation
+  const c = document.getElementById('si-center');
+  c.style.animation = 'none';
+  void c.offsetWidth;
+  c.style.animation = '';
+}
+
+let siSelectedRole = null;
+function siSelectRole(role) {
+  siSelectedRole = role;
+  document.getElementById('si-leader').classList.toggle('si-active', role === 'leader');
+  document.getElementById('si-member').classList.toggle('si-active', role === 'member');
+  document.getElementById('si-next-btn').classList.add('si-ready');
+}
+
+function siHandleNext() {
+  const btn = document.getElementById('si-next-btn');
+  if (!siSelectedRole) {
+    btn.classList.remove('si-shake');
+    void btn.offsetWidth;
+    btn.classList.add('si-shake');
+    ['si-leader','si-member'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.borderColor = 'rgba(220,55,30,0.55)';
+      setTimeout(() => el.style.borderColor = '', 700);
+    });
+    return;
+  }
+  if (siSelectedRole === 'leader') {
+    localStorage.setItem('reshare_role', 'admin');
+    window.location.href = 'login.html';
+  } else {
+    localStorage.setItem('reshare_role', 'student');
+    window.location.href = 'student-login.html';
+  }
+}
+
+/* ─── STAR FIELD ─── */
+let siStarsInited = false;
+function siInitStars() {
+  if (siStarsInited) return;
+  siStarsInited = true;
+  const cv  = document.getElementById('si-star-canvas');
+  const ctx = cv.getContext('2d');
+  let stars = [];
+  function resize() {
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+    stars = Array.from({length:280}, () => ({
+      x: Math.random(), y: Math.random(),
+      r: 0.2 + Math.random() * 1.55,
+      a: 0.12 + Math.random() * 0.78,
+      sp: 0.2 + Math.random() * 0.85,
+      ph: Math.random() * Math.PI * 2,
+      warm: Math.random() > 0.78  // slight warm tint near planet zone
+    }));
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw(t) {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const T = t * 0.001;
+    stars.forEach(s => {
+      const tw = s.a * (0.58 + 0.42 * Math.sin(T * s.sp + s.ph));
+      ctx.beginPath();
+      ctx.arc(s.x * cv.width, s.y * cv.height, s.r, 0, Math.PI*2);
+      // warm stars cluster near top-right (planet area)
+      const isWarmZone = s.x > 0.52 && s.y < 0.52;
+      ctx.fillStyle = (s.warm && isWarmZone)
+        ? `rgba(255,210,185,${tw * 0.72})`
+        : `rgba(255,255,255,${tw})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>
