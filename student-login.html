@@ -10,6 +10,7 @@
   <!-- ── Firebase SDKs ── -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <!-- ── EmailJS ── -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
@@ -1018,7 +1019,8 @@
     projectId:         "campus-reshare-hub",
     storageBucket:     "campus-reshare-hub.firebasestorage.app",
     messagingSenderId: "109344065499",
-    appId:             "1:109344065499:web:bb3697ad083f7998a609fe"
+    appId:             "1:109344065499:web:bb3697ad083f7998a609fe",
+    databaseURL:       "https://campus-reshare-default-rtdb.firebaseio.com"
   };
   const EMAILJS_SERVICE_ID  = "service_kyjvp2o";
   const EMAILJS_TEMPLATE_ID = "template_lcl52ze";
@@ -1030,13 +1032,15 @@
      ██████  FIREBASE INIT  ██████
   ═══════════════════════════════════════════════════════════ */
   let db = null;
+  let rtdb = null;
   let firebaseReady = false;
 
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
+    rtdb = firebase.database();
     firebaseReady = true;
-    console.info('[ReShareHub] Firebase connected ✓');
+    console.info('[ReShareHub] Firebase connected ✓ (Firestore + Realtime DB)');
   } catch(e) {
     console.warn('[ReShareHub] Firebase not configured — using localStorage fallback (development only)');
     console.warn('[ReShareHub] Fill in FIREBASE_CONFIG above to enable real database.');
@@ -1113,6 +1117,41 @@
         users[emailToId(email)].password = hashedPwd;
         localStorage.setItem('reshare_users', JSON.stringify(users));
       }
+    }
+  }
+
+  /* ── Realtime DB: save/update a saved-password entry ── */
+  async function dbSaveSavedPassword(email, encPwd) {
+    const id = emailToId(email);
+    const entry = { email: email.toLowerCase(), pwd: encPwd, savedAt: Date.now() };
+    if (firebaseReady && rtdb) {
+      await rtdb.ref('saved_passwords/' + id).set(entry);
+    } else {
+      const all = JSON.parse(localStorage.getItem('reshare_saved_pwds_v2') || '{}');
+      all[id] = entry;
+      localStorage.setItem('reshare_saved_pwds_v2', JSON.stringify(all));
+    }
+  }
+
+  /* ── Realtime DB: get all saved passwords ── */
+  async function dbGetAllSavedPasswords() {
+    if (firebaseReady && rtdb) {
+      const snap = await rtdb.ref('saved_passwords').once('value');
+      return snap.val() || {};
+    } else {
+      return JSON.parse(localStorage.getItem('reshare_saved_pwds_v2') || '{}');
+    }
+  }
+
+  /* ── Realtime DB: remove a saved password entry ── */
+  async function dbRemoveSavedPassword(email) {
+    const id = emailToId(email);
+    if (firebaseReady && rtdb) {
+      await rtdb.ref('saved_passwords/' + id).remove();
+    } else {
+      const all = JSON.parse(localStorage.getItem('reshare_saved_pwds_v2') || '{}');
+      delete all[id];
+      localStorage.setItem('reshare_saved_pwds_v2', JSON.stringify(all));
     }
   }
 
@@ -1217,10 +1256,12 @@
       btn.innerHTML = 'Welcome! ✓';
       await new Promise(r => setTimeout(r, 600));
 
-      // ✅ Show save password popup (only if not already saved)
-      const alreadySaved = localStorage.getItem('reshare_pwdsaved_' + email);
+      // ✅ Show save password popup (only if not already saved for this account)
+      const allSaved = await dbGetAllSavedPasswords();
+      const id = emailToId(email);
+      const alreadySaved = allSaved[id];
       if (!alreadySaved) {
-        showSavePwdPopup(email, pwd);
+        showSavePwdPopup(email, pwd, false);
       } else {
         showSuccessView(user);
       }
@@ -1256,18 +1297,13 @@
     document.getElementById('successView').classList.add('active');
   }
 
-  // ══ SAVE PASSWORD POPUP LOGIC ══
+  // ══ SAVE PASSWORD POPUP LOGIC (multi-account + Firebase) ══
   var _spEmail = '', _spPwd = '', _spPwdVisible = false, _spUser = null, _spIsUpdate = false;
 
-  function showSavePwdPopup(email, pwd) {
-    _spEmail = email; _spPwd = pwd;
+  function showSavePwdPopup(email, pwd, isUpdate) {
+    _spEmail = email; _spPwd = pwd; _spIsUpdate = !!isUpdate;
     _spPwdVisible = false;
 
-    // Detect if this is an UPDATE (password already saved for this email)
-    var savedEmail = localStorage.getItem('reshare_saved_email');
-    _spIsUpdate = !!(savedEmail && savedEmail.toLowerCase() === email.toLowerCase());
-
-    // Dynamically update popup heading/button text
     var titleEl    = document.getElementById('spTitle');
     var subtitleEl = document.getElementById('spSubtitle');
     var saveBtnEl  = document.getElementById('spSaveBtn');
@@ -1281,7 +1317,6 @@
     document.getElementById('spPwd').style.letterSpacing = '3px';
     document.getElementById('spPwd').style.fontSize      = '18px';
     document.getElementById('savePwdOverlay').style.display = 'flex';
-    // get user for successView after choice
     dbGetUser(email).then(function(u){ _spUser = u; });
   }
 
@@ -1293,31 +1328,130 @@
     document.getElementById('spPwd').style.fontSize      = _spPwdVisible ? '13px'   : '18px';
   }
 
-  function savePwdNow() {
-    // Always overwrite saved email+password with the latest credentials
-    localStorage.setItem('reshare_saved_email', _spEmail);
-    localStorage.setItem('reshare_saved_pwd',   btoa(_spPwd));
-    localStorage.setItem('reshare_pwdsaved_' + _spEmail, '1');
-    // Also clear any alternate-case key
-    localStorage.setItem('reshare_pwdsaved_' + _spEmail.toLowerCase(), '1');
-    document.getElementById('savePwdOverlay').style.display = 'none';
-    var msg = _spIsUpdate ? 'Saved password updated in your browser!' : 'Password saved to your browser!';
-    showToast(msg, '💾', 3000);
-    // Only go to successView if user is actually logged in (has session)
-    if (_spUser && localStorage.getItem('reshare_session')) {
-      showSuccessView(_spUser);
+  async function savePwdNow() {
+    var btn = document.getElementById('spSaveBtn');
+    if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+    try {
+      // Store in Firebase (or localStorage fallback) — supports multiple accounts
+      var encPwd = btoa(_spPwd);
+      await dbSaveSavedPassword(_spEmail, encPwd);
+      document.getElementById('savePwdOverlay').style.display = 'none';
+      var msg = _spIsUpdate ? 'Saved password updated!' : 'Password saved successfully!';
+      showToast(msg, '💾', 3000);
+      if (_spUser && localStorage.getItem('reshare_session')) {
+        showSuccessView(_spUser);
+      }
+    } catch(e) {
+      console.error(e);
+      if (btn) { btn.textContent = _spIsUpdate ? 'Update Now' : 'Save Now'; btn.disabled = false; }
     }
-    // Otherwise stay on login form (post-reset flow — user still needs to sign in)
   }
 
   function savePwdLater() {
     document.getElementById('savePwdOverlay').style.display = 'none';
-    // Only go to successView if user is actually logged in (has session)
     if (_spUser && localStorage.getItem('reshare_session')) {
       showSuccessView(_spUser);
     }
-    // Otherwise stay on login form (post-reset flow)
   }
+
+  // ══ SAVED ACCOUNTS SUGGESTION DROPDOWN (multi-account) ══
+  async function initSavedSuggestion() {
+    var allSaved = await dbGetAllSavedPasswords();
+    var entries = Object.values(allSaved);
+    if (entries.length === 0) return;
+
+    const emailEl = document.getElementById('email');
+    const pwdEl   = document.getElementById('pwd');
+
+    function buildHint() {
+      if (document.getElementById('savedCredHint')) return;
+
+      var hint = document.createElement('div');
+      hint.id = 'savedCredHint';
+      hint.style.cssText = [
+        'position:absolute;z-index:9999;',
+        'background:var(--card-bg,#fff);',
+        'border:1.5px solid #c7d2fe;',
+        'border-radius:14px;',
+        'box-shadow:0 12px 40px rgba(79,70,229,0.18);',
+        'padding:10px 8px;',
+        'min-width:280px;max-width:340px;',
+        'font-family:DM Sans,sans-serif;'
+      ].join('');
+
+      var header = '<div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;padding:2px 8px 8px;">Saved Accounts</div>';
+      var rows = entries.map(function(e) {
+        var initials = e.email.charAt(0).toUpperCase();
+        return [
+          '<div class="sp-acc-row" data-email="' + e.email + '" data-pwd="' + e.pwd + '" style="',
+          'display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;',
+          'transition:background 0.15s;position:relative;">',
+            '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);',
+            'display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;',
+            'color:#fff;flex-shrink:0;">' + initials + '</div>',
+            '<div style="flex:1;min-width:0;">',
+              '<div style="font-size:13px;font-weight:700;color:var(--ink,#1f2937);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + e.email + '</div>',
+              '<div style="font-size:12px;color:#9ca3af;letter-spacing:2px;">••••••••</div>',
+            '</div>',
+            '<button class="sp-remove-btn" data-email="' + e.email + '" style="',
+            'background:none;border:none;cursor:pointer;font-size:15px;color:#d1d5db;',
+            'padding:4px;border-radius:6px;transition:color 0.15s;flex-shrink:0;" title="Remove saved account">✕</button>',
+          '</div>'
+        ].join('');
+      }).join('');
+
+      hint.innerHTML = header + rows;
+
+      // Click row → fill fields
+      hint.querySelectorAll('.sp-acc-row').forEach(function(row) {
+        row.addEventListener('mouseenter', function() { row.style.background = 'rgba(124,58,237,0.08)'; });
+        row.addEventListener('mouseleave', function() { row.style.background = ''; });
+        row.addEventListener('click', function(ev) {
+          if (ev.target.classList.contains('sp-remove-btn') || ev.target.closest('.sp-remove-btn')) return;
+          emailEl.value = row.dataset.email;
+          try { pwdEl.value = atob(row.dataset.pwd); } catch(ex){}
+          hint.remove();
+        });
+      });
+
+      // Click ✕ → remove from Firebase + rebuild list
+      hint.querySelectorAll('.sp-remove-btn').forEach(function(btn) {
+        btn.addEventListener('mouseenter', function() { btn.style.color = '#ef4444'; });
+        btn.addEventListener('mouseleave', function() { btn.style.color = '#d1d5db'; });
+        btn.addEventListener('click', async function(ev) {
+          ev.stopPropagation();
+          var emailToRemove = btn.dataset.email;
+          await dbRemoveSavedPassword(emailToRemove);
+          entries = entries.filter(function(e) { return e.email !== emailToRemove; });
+          hint.remove();
+          if (entries.length > 0) buildHint();
+        });
+      });
+
+      // Position below email field
+      var rect = emailEl.getBoundingClientRect();
+      hint.style.position = 'fixed';
+      hint.style.top  = (rect.bottom + 6) + 'px';
+      hint.style.left = rect.left + 'px';
+      document.body.appendChild(hint);
+
+      // Dismiss on outside click
+      setTimeout(function() {
+        document.addEventListener('click', function handler(ev) {
+          if (!hint.contains(ev.target) && ev.target !== emailEl && ev.target !== pwdEl) {
+            hint.remove();
+            document.removeEventListener('click', handler);
+          }
+        });
+      }, 100);
+    }
+
+    emailEl.addEventListener('focus', buildHint);
+    emailEl.addEventListener('click', buildHint);
+    pwdEl.addEventListener('focus',   buildHint);
+    pwdEl.addEventListener('click',   buildHint);
+  }
+  initSavedSuggestion();
 
   function goToDashboard() {
     window.location.href = 'dashboard.html';
@@ -1326,7 +1460,7 @@
   function signOut() {
     localStorage.removeItem('reshare_session');
     localStorage.removeItem('reshare_remember');
-    localStorage.removeItem('user');  // clears auth for all existing pages too
+    localStorage.removeItem('user');
     document.getElementById('tabBar').style.display = 'flex';
     document.getElementById('successView').classList.remove('active');
     document.getElementById('signinView').classList.add('active');
@@ -1338,65 +1472,18 @@
     document.getElementById('pwd').value = '';
   }
 
-  // Auto-fill remembered email
+  // Auto-fill remembered email + session restore
   (function() {
     const remembered = localStorage.getItem('reshare_remember');
     if (remembered) {
       document.getElementById('email').value = remembered;
       document.getElementById('rememberMe').checked = true;
     }
-    // ✅ Auto-fill saved password if user chose "Save Now" before
-    const savedEmail = localStorage.getItem('reshare_saved_email');
-    const savedPwd   = localStorage.getItem('reshare_saved_pwd');
-    if (savedEmail && savedPwd) {
-      // Show suggestion dropdown when user clicks email or password field
-      const emailEl = document.getElementById('email');
-      const pwdEl   = document.getElementById('pwd');
-
-      function showSavedSuggestion() {
-        if (document.getElementById('savedCredHint')) return;
-        const hint = document.createElement('div');
-        hint.id = 'savedCredHint';
-        hint.style.cssText = 'position:absolute;z-index:9999;background:#fff;border:1.5px solid #c7d2fe;border-radius:12px;box-shadow:0 8px 28px rgba(79,70,229,0.15);padding:10px 14px;cursor:pointer;min-width:260px;font-family:DM Sans,sans-serif;';
-        hint.innerHTML =
-          '<div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px;">Saved Account</div>'
-        + '<div style="display:flex;align-items:center;gap:10px;">'
-        + '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👤</div>'
-        + '<div><div style="font-size:13px;font-weight:700;color:#1f2937;">' + savedEmail + '</div>'
-        + '<div style="font-size:12px;color:#9ca3af;">••••••••</div></div>'
-        + '</div>';
-        hint.onclick = function() {
-          emailEl.value = savedEmail;
-          try { pwdEl.value = atob(savedPwd); } catch(e){}
-          hint.remove();
-        };
-        // Position below the email field
-        const rect = emailEl.getBoundingClientRect();
-        hint.style.top  = (rect.bottom + window.scrollY + 6) + 'px';
-        hint.style.left = (rect.left  + window.scrollX)     + 'px';
-        document.body.appendChild(hint);
-        // Remove if clicked outside
-        setTimeout(() => {
-          document.addEventListener('click', function handler(e) {
-            if (!hint.contains(e.target) && e.target !== emailEl && e.target !== pwdEl) {
-              hint.remove();
-              document.removeEventListener('click', handler);
-            }
-          });
-        }, 100);
-      }
-
-      emailEl.addEventListener('focus', showSavedSuggestion);
-      emailEl.addEventListener('click', showSavedSuggestion);
-      pwdEl.addEventListener('focus',   showSavedSuggestion);
-      pwdEl.addEventListener('click',   showSavedSuggestion);
-    }
-    // Check if already logged in
     const session = localStorage.getItem('reshare_session');
     if (session) {
       try {
         const user = JSON.parse(session);
-        localStorage.setItem('user', user.email); // keep 'user' key in sync
+        localStorage.setItem('user', user.email);
         showSuccessView(user);
       } catch(e) { localStorage.removeItem('reshare_session'); }
     }
@@ -1538,9 +1625,11 @@
       document.getElementById('email').value = resetEmail;
       document.getElementById('pwd').value   = '';
       document.getElementById('pwd').focus();
-      // After a short delay, offer to save the new password
-      setTimeout(function() {
-        showSavePwdPopup(resetEmail, resetPwd);
+      // After a short delay, offer to save/update the password
+      setTimeout(async function() {
+        var allSaved = await dbGetAllSavedPasswords();
+        var isUpdate = !!(allSaved[emailToId(resetEmail)]);
+        showSavePwdPopup(resetEmail, resetPwd, isUpdate);
       }, 900);
     }
   }
@@ -1762,7 +1851,7 @@
         Not Now
       </button>
     </div>
-    <p style="font-size:11px;color:#9ca3af;text-align:center;margin:12px 0 0;">Saved securely in your browser only</p>
+    <p style="font-size:11px;color:#9ca3af;text-align:center;margin:12px 0 0;">Saved securely in Firebase — accessible across devices</p>
   </div>
 </div>
 <style>
